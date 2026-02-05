@@ -23,7 +23,7 @@
     </form>
 
     <span class="auth-link">
-        ¿Primera vez aquí? <a href="register.html">Crear cuenta</a>
+        ¿Primera vez aquí? <a href="register">Crear cuenta</a>
     </span>
 </div>
 

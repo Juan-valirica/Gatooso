@@ -78,7 +78,7 @@ document.addEventListener('DOMContentLoaded', loadPhotos);
 function loadPhotos() {
     if (!photoGrid) return;
 
-    fetch('/api/get-photos.php')
+    fetch('/app/api/get-photos.php')
         .then(res => res.json())
         .then(data => {
             photoGrid.innerHTML = '';
@@ -120,7 +120,7 @@ function renderFounderState() {
                 </h2>
 
                 <p>
-                    Atrévete a ser la primera persona que lo inicia.  
+                    Atrévete a ser la primera persona que lo inicia.
                     Los retos no empiezan solos. Empiezan con alguien como tú.
                 </p>
 
@@ -161,6 +161,6 @@ function renderTechnicalError() {
 // ===============================
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js');
+        navigator.serviceWorker.register('/app/sw.js');
     });
 }

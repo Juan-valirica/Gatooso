@@ -3,8 +3,8 @@ header("Content-Type: application/json");
 require "db.php";
 
 $stmt = $pdo->query("
-    SELECT image_url, rating 
-    FROM photos 
+    SELECT image_url, rating
+    FROM images
     ORDER BY created_at DESC
 ");
 
