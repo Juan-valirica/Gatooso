@@ -11,8 +11,8 @@
 header('Content-Type: text/html; charset=utf-8');
 
 $host = "localhost";
-$db   = "gatooso_db";
-$user = "gatooso_user";
+$db   = "u163890745_gatooso_db";
+$user = "u163890745_gatooso_user";
 $pass = "Rakwu4-wemjog-cajsit";
 
 echo "<h1>Gatooso — Setup</h1>";
