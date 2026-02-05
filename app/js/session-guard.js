@@ -4,9 +4,9 @@ fetch('/app/api/session.php', {
 .then(res => res.json())
 .then(data => {
     if (!data.authenticated) {
-        window.location.href = '/app/auth/login';
+        window.location.href = '/app/auth/login.php';
     }
 })
 .catch(() => {
-    window.location.href = '/app/auth/login';
+    window.location.href = '/app/auth/login.php';
 });

@@ -24,7 +24,7 @@
     </form>
 
     <span class="auth-link">
-        ¿Ya tienes cuenta? <a href="login">Iniciar sesión</a>
+        ¿Ya tienes cuenta? <a href="login.php">Iniciar sesión</a>
     </span>
 </div>
 
