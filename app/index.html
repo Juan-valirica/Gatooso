@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Gatooso · Photo Board</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+    <link rel="stylesheet" href="css/dashboard.css">
+
+    <!-- 🔐 SESSION GUARD (DEBE IR PRIMERO) -->
+    <script src="js/session-guard.js"></script>
+
+    <!-- APP LOGIC -->
+    <script defer src="js/dashboard.js"></script>
+    <script src="https://unpkg.com/phosphor-icons"></script>
+
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#221723">
+
+    <!-- iOS -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Gatooso">
+    <link rel="apple-touch-icon" href="/app/assets/brand/apple-touch-icon.png">
+</head>
+
+<body>
+
+<header id="storiesBar" class="floating-header">
+
+    <div class="floating-inner">
+
+        <!-- TOP BAR -->
+        <div class="header-top">
+            <img src="assets/brand/logo.svg" alt="Gatooso" class="app-logo">
+
+            <button class="chat-btn" aria-label="Chat del tablero">
+                <i class="ph-chat-circle-dots"></i>
+            </button>
+        </div>
+
+        <!-- CHALLENGE BAR -->
+        <div class="challenge-bar">
+
+            <div class="challenge-text">
+                <span class="challenge-chip">Reto activo</span>
+
+                <div class="challenge-title">
+                    La foto más sexy sin querer 😏
+                </div>
+
+                <div class="challenge-description">
+                    Esa que no estaba planeada, pero que es el estandarte tu tinder 🔥
+                </div>
+            </div>
+
+            <span class="challenge-countdown" aria-label="Tiempo restante del reto">
+                <span class="time">02</span>d
+                <span class="divider">:</span>
+                <span class="time">14</span>h
+                <span class="divider">:</span>
+                <span class="time">32</span>m
+            </span>
+
+        </div>
+
+        <!-- STORIES -->
+        <div class="stories" aria-label="Miembros del tablero">
+            <div class="story"><img src="https://i.pravatar.cc/100?img=1" alt=""></div>
+            <div class="story"><img src="https://i.pravatar.cc/100?img=2" alt=""></div>
+            <div class="story"><img src="https://i.pravatar.cc/100?img=3" alt=""></div>
+            <div class="story"><img src="https://i.pravatar.cc/100?img=4" alt=""></div>
+            <div class="story"><img src="https://i.pravatar.cc/100?img=5" alt=""></div>
+            <div class="story"><img src="https://i.pravatar.cc/100?img=6" alt=""></div>
+            <div class="story"><img src="https://i.pravatar.cc/100?img=7" alt=""></div>
+        </div>
+
+    </div>
+
+</header>
+
+<main class="grid-container" id="photoGrid"></main>
+
+
+<nav class="bottom-nav">
+    <button class="nav-btn">
+        <i class="ph-house"></i>
+    </button>
+    
+    <button class="nav-btn">
+        <i class="ph-clock-counter-clockwise"></i>
+    </button>
+    
+    <button class="fab">
+        <i class="ph-plus"></i>
+    </button>
+    
+    <button class="nav-btn">
+        <i class="ph-users"></i>
+    </button>
+    
+    <button class="nav-btn">
+        <i class="ph-info"></i>
+    </button>
+
+</nav>
+
+<div id="addModal" class="modal">
+    <div class="modal-content">
+        <button><i class="ph-camera"></i> Subir foto</button>
+<button><i class="ph-video-camera"></i> Subir video</button>
+
+        <button class="close">Cancelar</button>
+    </div>
+</div>
+
+</body>
+</html>
