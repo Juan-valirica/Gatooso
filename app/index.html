@@ -8,7 +8,7 @@
 
     <link rel="stylesheet" href="css/dashboard.css">
 
-    <!-- 🔐 SESSION GUARD (DEBE IR PRIMERO) -->
+    <!-- SESSION GUARD (DEBE IR PRIMERO) -->
     <script src="js/session-guard.js"></script>
 
     <!-- APP LOGIC -->
@@ -34,10 +34,6 @@
         <!-- TOP BAR -->
         <div class="header-top">
             <img src="assets/brand/logo.svg" alt="Gatooso" class="app-logo">
-
-            <button class="chat-btn" aria-label="Chat del tablero">
-                <i class="ph-chat-circle-dots"></i>
-            </button>
         </div>
 
         <!-- CHALLENGE BAR -->
@@ -47,11 +43,11 @@
                 <span class="challenge-chip">Reto activo</span>
 
                 <div class="challenge-title">
-                    La foto más sexy sin querer 😏
+                    La foto más sexy sin querer
                 </div>
 
                 <div class="challenge-description">
-                    Esa que no estaba planeada, pero que es el estandarte tu tinder 🔥
+                    Esa que no estaba planeada, pero que es el estandarte de tu perfil
                 </div>
             </div>
 
@@ -65,15 +61,9 @@
 
         </div>
 
-        <!-- STORIES -->
-        <div class="stories" aria-label="Miembros del tablero">
-            <div class="story"><img src="https://i.pravatar.cc/100?img=1" alt=""></div>
-            <div class="story"><img src="https://i.pravatar.cc/100?img=2" alt=""></div>
-            <div class="story"><img src="https://i.pravatar.cc/100?img=3" alt=""></div>
-            <div class="story"><img src="https://i.pravatar.cc/100?img=4" alt=""></div>
-            <div class="story"><img src="https://i.pravatar.cc/100?img=5" alt=""></div>
-            <div class="story"><img src="https://i.pravatar.cc/100?img=6" alt=""></div>
-            <div class="story"><img src="https://i.pravatar.cc/100?img=7" alt=""></div>
+        <!-- MEMBERS -->
+        <div class="stories" id="membersBar" aria-label="Miembros del tablero">
+            <!-- Loaded dynamically by dashboard.js -->
         </div>
 
     </div>
@@ -87,31 +77,58 @@
     <button class="nav-btn">
         <i class="ph-house"></i>
     </button>
-    
+
     <button class="nav-btn">
         <i class="ph-clock-counter-clockwise"></i>
     </button>
-    
+
     <button class="fab">
         <i class="ph-plus"></i>
     </button>
-    
+
     <button class="nav-btn">
         <i class="ph-users"></i>
     </button>
-    
+
     <button class="nav-btn">
         <i class="ph-info"></i>
     </button>
 
 </nav>
 
+<!-- UPLOAD MODAL -->
 <div id="addModal" class="modal">
     <div class="modal-content">
-        <button><i class="ph-camera"></i> Subir foto</button>
-<button><i class="ph-video-camera"></i> Subir video</button>
 
-        <button class="close">Cancelar</button>
+        <!-- Step 1: Choose photo -->
+        <div id="uploadStep1">
+            <label class="upload-btn">
+                <i class="ph-image"></i> Elegir foto
+                <input type="file" id="photoInput" accept="image/jpeg,image/png,image/webp" hidden>
+            </label>
+            <button class="close">Cancelar</button>
+        </div>
+
+        <!-- Step 2: Preview + confirm -->
+        <div id="uploadStep2" style="display:none">
+            <div class="upload-preview-container">
+                <img id="photoPreview" alt="Preview">
+            </div>
+            <input type="text" id="captionInput" placeholder="Escribe algo sobre tu foto..." class="caption-input">
+            <button id="confirmUpload" class="upload-confirm-btn">
+                <i class="ph-paper-plane-tilt"></i> Subir foto
+            </button>
+            <button id="cancelUpload" class="close">Cambiar foto</button>
+        </div>
+
+        <!-- Step 3: Uploading -->
+        <div id="uploadStep3" style="display:none">
+            <div class="upload-loading">
+                <div class="spinner"></div>
+                <p>Subiendo tu foto...</p>
+            </div>
+        </div>
+
     </div>
 </div>
 
