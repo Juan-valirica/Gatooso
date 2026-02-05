@@ -10,10 +10,16 @@ if (!isset($_SESSION['user_id'])) {
 require 'db.php';
 
 $user_id = $_SESSION['user_id'];
+$board_id = intval($_POST['board_id'] ?? 0);
 
 // Validate file
 if (!isset($_FILES['photo']) || $_FILES['photo']['error'] !== UPLOAD_ERR_OK) {
     echo json_encode(['success' => false, 'message' => 'No se recibió la imagen']);
+    exit;
+}
+
+if (!$board_id) {
+    echo json_encode(['success' => false, 'message' => 'Primero crea o selecciona un tablero']);
     exit;
 }
 
@@ -37,43 +43,17 @@ if ($file['size'] > 10 * 1024 * 1024) {
     exit;
 }
 
-// Ensure user has a board + challenge (auto-create for MVP)
-$board = $pdo->prepare("
-    SELECT b.id AS board_id, c.id AS challenge_id
-    FROM board_users bu
-    JOIN boards b ON b.id = bu.board_id
-    LEFT JOIN challenges c ON c.board_id = b.id
-    WHERE bu.user_id = ?
-    ORDER BY b.created_at DESC
-    LIMIT 1
-");
-$board->execute([$user_id]);
-$context = $board->fetch();
+// Get or create challenge for this board
+$stmt = $pdo->prepare("SELECT id FROM challenges WHERE board_id = ? ORDER BY created_at DESC LIMIT 1");
+$stmt->execute([$board_id]);
+$challenge = $stmt->fetch();
 
-if (!$context || !$context['board_id']) {
-    // Create default board
-    $stmt = $pdo->prepare("INSERT INTO boards (title, description, created_by) VALUES (?, ?, ?)");
-    $stmt->execute(['Mi primer tablero', 'Tablero creado automáticamente', $user_id]);
-    $board_id = $pdo->lastInsertId();
-
-    // Add user as owner
-    $stmt = $pdo->prepare("INSERT INTO board_users (board_id, user_id, role) VALUES (?, ?, 'owner')");
-    $stmt->execute([$board_id, $user_id]);
-
-    // Create default challenge
+if ($challenge) {
+    $challenge_id = $challenge['id'];
+} else {
     $stmt = $pdo->prepare("INSERT INTO challenges (board_id, title, description, created_by) VALUES (?, ?, ?, ?)");
     $stmt->execute([$board_id, 'La foto más sexy sin querer', 'Esa que no estaba planeada, pero que es el estandarte de tu perfil', $user_id]);
     $challenge_id = $pdo->lastInsertId();
-} else {
-    $board_id = $context['board_id'];
-    $challenge_id = $context['challenge_id'];
-
-    if (!$challenge_id) {
-        // Board exists but no challenge — create one
-        $stmt = $pdo->prepare("INSERT INTO challenges (board_id, title, description, created_by) VALUES (?, ?, ?, ?)");
-        $stmt->execute([$board_id, 'La foto más sexy sin querer', 'Esa que no estaba planeada, pero que es el estandarte de tu perfil', $user_id]);
-        $challenge_id = $pdo->lastInsertId();
-    }
 }
 
 // Create uploads directory

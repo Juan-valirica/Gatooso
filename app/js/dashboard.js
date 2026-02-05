@@ -4,6 +4,7 @@
 let lastScrollY = 0;
 const SCROLL_THRESHOLD = 40;
 let selectedFile = null;
+let currentBoardId = null;
 
 // ===============================
 // ELEMENTS
@@ -25,6 +26,36 @@ const captionInput = document.getElementById('captionInput');
 const confirmUpload = document.getElementById('confirmUpload');
 const cancelUpload = document.getElementById('cancelUpload');
 
+// Boards elements
+const navHome = document.getElementById('navHome');
+const boardsPanel = document.getElementById('boardsPanel');
+const boardsList = document.getElementById('boardsList');
+const closeBoardsPanel = document.getElementById('closeBoardsPanel');
+const newBoardTitle = document.getElementById('newBoardTitle');
+const createBoardBtn = document.getElementById('createBoardBtn');
+
+// ===============================
+// INIT — Load saved board or show boards panel
+// ===============================
+document.addEventListener('DOMContentLoaded', () => {
+    currentBoardId = sessionStorage.getItem('currentBoardId');
+
+    if (currentBoardId) {
+        currentBoardId = parseInt(currentBoardId);
+        loadBoard();
+    } else {
+        // No board selected — open boards panel automatically
+        openBoardsPanel();
+    }
+});
+
+function loadBoard() {
+    if (!currentBoardId) return;
+    storiesBar.style.display = '';
+    loadPhotos();
+    loadBoardMembers();
+}
+
 // ===============================
 // STORIES BAR HIDE / SHOW ON SCROLL
 // ===============================
@@ -45,10 +76,123 @@ window.addEventListener('scroll', () => {
 });
 
 // ===============================
-// MODAL OPEN / CLOSE
+// BOARDS PANEL
+// ===============================
+if (navHome) {
+    navHome.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openBoardsPanel();
+    });
+}
+
+if (closeBoardsPanel) {
+    closeBoardsPanel.addEventListener('click', () => {
+        closeBoardsPanelFn();
+    });
+}
+
+if (boardsPanel) {
+    boardsPanel.addEventListener('click', (e) => {
+        if (e.target === boardsPanel) {
+            closeBoardsPanelFn();
+        }
+    });
+}
+
+function openBoardsPanel() {
+    loadBoardsList();
+    boardsPanel.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeBoardsPanelFn() {
+    boardsPanel.style.display = 'none';
+    document.body.style.overflow = '';
+}
+
+function loadBoardsList() {
+    boardsList.innerHTML = '<p class="boards-loading">Cargando...</p>';
+
+    fetch('/app/api/get-boards.php')
+        .then(res => res.json())
+        .then(data => {
+            boardsList.innerHTML = '';
+
+            if (!data.boards || data.boards.length === 0) {
+                boardsList.innerHTML = '<div class="boards-empty"><p>Aún no tienes tableros.</p><p>Crea tu primero para comenzar.</p></div>';
+                return;
+            }
+
+            data.boards.forEach(board => {
+                var el = document.createElement('button');
+                el.className = 'board-item';
+                if (currentBoardId && parseInt(board.id) === currentBoardId) {
+                    el.classList.add('board-active');
+                }
+                el.innerHTML = '<span class="board-title">' + escapeHtml(board.title) + '</span>' +
+                    '<span class="board-meta">' + board.member_count + ' miembro' + (board.member_count != 1 ? 's' : '') + '</span>';
+                el.addEventListener('click', function() {
+                    selectBoard(parseInt(board.id));
+                });
+                boardsList.appendChild(el);
+            });
+        })
+        .catch(function() {
+            boardsList.innerHTML = '<p class="boards-loading">Error al cargar tableros</p>';
+        });
+}
+
+function selectBoard(boardId) {
+    currentBoardId = boardId;
+    sessionStorage.setItem('currentBoardId', boardId);
+    closeBoardsPanelFn();
+    loadBoard();
+}
+
+// Create board
+if (createBoardBtn) {
+    createBoardBtn.addEventListener('click', function() {
+        var title = newBoardTitle.value.trim();
+        if (!title) {
+            newBoardTitle.focus();
+            return;
+        }
+
+        createBoardBtn.disabled = true;
+
+        var formData = new FormData();
+        formData.append('title', title);
+
+        fetch('/app/api/create-board.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+            createBoardBtn.disabled = false;
+            if (data.success) {
+                newBoardTitle.value = '';
+                selectBoard(data.board_id);
+            } else {
+                alert(data.message || 'Error al crear el tablero');
+            }
+        })
+        .catch(function() {
+            createBoardBtn.disabled = false;
+            alert('Error de conexión');
+        });
+    });
+}
+
+// ===============================
+// MODAL OPEN / CLOSE (Photo upload)
 // ===============================
 if (fab && modal) {
     fab.addEventListener('click', () => {
+        if (!currentBoardId) {
+            openBoardsPanel();
+            return;
+        }
         openModal();
     });
 }
@@ -119,7 +263,7 @@ if (cancelUpload) {
 // Step 2 -> Step 3: Confirm upload
 if (confirmUpload) {
     confirmUpload.addEventListener('click', () => {
-        if (!selectedFile) return;
+        if (!selectedFile || !currentBoardId) return;
 
         uploadStep2.style.display = 'none';
         uploadStep3.style.display = '';
@@ -127,6 +271,7 @@ if (confirmUpload) {
         const formData = new FormData();
         formData.append('photo', selectedFile);
         formData.append('caption', captionInput.value.trim());
+        formData.append('board_id', currentBoardId);
 
         fetch('/app/api/upload-photo.php', {
             method: 'POST',
@@ -163,15 +308,10 @@ bottomNavButtons.forEach(button => {
 // ===============================
 // LOAD PHOTOS FROM DATABASE
 // ===============================
-document.addEventListener('DOMContentLoaded', () => {
-    loadPhotos();
-    loadBoardMembers();
-});
-
 function loadPhotos() {
-    if (!photoGrid) return;
+    if (!photoGrid || !currentBoardId) return;
 
-    fetch('/app/api/get-photos.php')
+    fetch('/app/api/get-photos.php?board_id=' + currentBoardId)
         .then(res => res.json())
         .then(data => {
             photoGrid.innerHTML = '';
@@ -185,13 +325,11 @@ function loadPhotos() {
                 const item = document.createElement('div');
                 item.className = 'grid-item';
 
-                item.innerHTML = `
-                    <img src="${photo.image_url}" alt="Foto del reto">
-                    <div class="rating-chip">
-                        <span class="star">&#11088;</span>
-                        <span class="rating-value">${photo.rating}</span>
-                    </div>
-                `;
+                item.innerHTML = '<img src="' + escapeHtml(photo.image_url) + '" alt="Foto del reto">' +
+                    '<div class="rating-chip">' +
+                    '<span class="star">&#11088;</span>' +
+                    '<span class="rating-value">' + photo.rating + '</span>' +
+                    '</div>';
 
                 photoGrid.appendChild(item);
             });
@@ -205,42 +343,42 @@ function loadPhotos() {
 // LOAD BOARD MEMBERS
 // ===============================
 function loadBoardMembers() {
-    if (!membersBar) return;
+    if (!membersBar || !currentBoardId) return;
 
-    fetch('/app/api/get-board-members.php')
+    fetch('/app/api/get-board-members.php?board_id=' + currentBoardId)
         .then(res => res.json())
         .then(data => {
             membersBar.innerHTML = '';
 
             // Invite button (always first, far left)
-            const inviteEl = document.createElement('div');
+            var inviteEl = document.createElement('div');
             inviteEl.className = 'story story-invite';
             inviteEl.innerHTML = '<span class="invite-icon">+</span>';
-            inviteEl.addEventListener('click', () => {
+            inviteEl.addEventListener('click', function() {
                 shareInviteLink(data.board_id);
             });
             membersBar.appendChild(inviteEl);
 
             // Members
             if (data.members && data.members.length > 0) {
-                data.members.forEach(member => {
-                    const el = document.createElement('div');
+                data.members.forEach(function(member) {
+                    var el = document.createElement('div');
                     el.className = 'story';
-                    const initials = getInitials(member.name);
+                    var initials = getInitials(member.name);
                     el.innerHTML = '<span class="member-avatar">' + initials + '</span>';
                     el.title = member.name;
                     membersBar.appendChild(el);
                 });
             }
         })
-        .catch(() => {
+        .catch(function() {
             // Silently fail
         });
 }
 
 function getInitials(name) {
     if (!name) return '?';
-    const parts = name.trim().split(' ');
+    var parts = name.trim().split(' ');
     if (parts.length >= 2) {
         return (parts[0][0] + parts[1][0]).toUpperCase();
     }
@@ -269,28 +407,15 @@ function shareInviteLink(boardId) {
 // FOUNDER STATE (NO PHOTOS YET)
 // ===============================
 function renderFounderState() {
-    photoGrid.innerHTML = `
-        <div class="empty-state">
-            <div class="empty-inner">
-                <h2>
-                    Este reto aún no tiene historia
-                </h2>
+    photoGrid.innerHTML = '<div class="empty-state"><div class="empty-inner">' +
+        '<h2>Este reto aún no tiene historia</h2>' +
+        '<p>Atrévete a ser la primera persona que lo inicia. Los retos no empiezan solos. Empiezan con alguien como tú.</p>' +
+        '<button class="empty-cta">Iniciar el reto</button>' +
+        '</div></div>';
 
-                <p>
-                    Atrévete a ser la primera persona que lo inicia.
-                    Los retos no empiezan solos. Empiezan con alguien como tú.
-                </p>
-
-                <button class="empty-cta">
-                    Iniciar el reto
-                </button>
-            </div>
-        </div>
-    `;
-
-    const cta = document.querySelector('.empty-cta');
+    var cta = document.querySelector('.empty-cta');
     if (cta && fab) {
-        cta.addEventListener('click', () => fab.click());
+        cta.addEventListener('click', function() { fab.click(); });
     }
 }
 
@@ -298,19 +423,18 @@ function renderFounderState() {
 // TECHNICAL ERROR STATE
 // ===============================
 function renderTechnicalError() {
-    photoGrid.innerHTML = `
-        <div class="empty-state">
-            <div class="empty-inner">
-                <h2>
-                    Algo se nos cruzó
-                </h2>
+    photoGrid.innerHTML = '<div class="empty-state"><div class="empty-inner">' +
+        '<h2>Algo se nos cruzó</h2>' +
+        '<p>No es tu culpa. Intenta de nuevo en un momento.</p>' +
+        '</div></div>';
+}
 
-                <p>
-                    No es tu culpa. Intenta de nuevo en un momento.
-                </p>
-            </div>
-        </div>
-    `;
+// ===============================
+// UTILS
+// ===============================
+function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 // ===============================

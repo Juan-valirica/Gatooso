@@ -74,7 +74,7 @@
 
 
 <nav class="bottom-nav">
-    <button class="nav-btn">
+    <button class="nav-btn" id="navHome">
         <i class="ph-house"></i>
     </button>
 
@@ -95,6 +95,25 @@
     </button>
 
 </nav>
+
+<!-- BOARDS PANEL -->
+<div id="boardsPanel" class="modal">
+    <div class="modal-content boards-content">
+        <div class="boards-header">
+            <h2>Mis tableros</h2>
+            <button class="close" id="closeBoardsPanel">&times;</button>
+        </div>
+        <div id="boardsList" class="boards-list">
+            <!-- Loaded dynamically -->
+        </div>
+        <div class="boards-create">
+            <input type="text" id="newBoardTitle" placeholder="Nombre del nuevo tablero..." class="caption-input">
+            <button id="createBoardBtn" class="upload-confirm-btn">
+                <i class="ph-plus-circle"></i> Crear tablero
+            </button>
+        </div>
+    </div>
+</div>
 
 <!-- UPLOAD MODAL -->
 <div id="addModal" class="modal">

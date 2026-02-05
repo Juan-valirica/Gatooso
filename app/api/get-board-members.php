@@ -3,31 +3,18 @@ session_start();
 header('Content-Type: application/json');
 
 if (!isset($_SESSION['user_id'])) {
-    echo json_encode([]);
+    echo json_encode(['board_id' => null, 'members' => []]);
     exit;
 }
 
 require 'db.php';
 
-$user_id = $_SESSION['user_id'];
+$board_id = intval($_GET['board_id'] ?? 0);
 
-// Get the user's current board
-$stmt = $pdo->prepare("
-    SELECT bu.board_id
-    FROM board_users bu
-    WHERE bu.user_id = ?
-    ORDER BY bu.joined_at DESC
-    LIMIT 1
-");
-$stmt->execute([$user_id]);
-$row = $stmt->fetch();
-
-if (!$row) {
-    echo json_encode([]);
+if (!$board_id) {
+    echo json_encode(['board_id' => null, 'members' => []]);
     exit;
 }
-
-$board_id = $row['board_id'];
 
 // Get all members of that board
 $stmt = $pdo->prepare("
@@ -41,6 +28,6 @@ $stmt->execute([$board_id]);
 $members = $stmt->fetchAll();
 
 echo json_encode([
-    'board_id' => (int) $board_id,
+    'board_id' => $board_id,
     'members' => $members
 ]);
