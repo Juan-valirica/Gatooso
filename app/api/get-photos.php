@@ -10,6 +10,19 @@ if (!$board_id) {
     exit;
 }
 
+// Get board rating icon
+$rating_icon = '⭐';
+try {
+    $stmt = $pdo->prepare("SELECT rating_icon FROM boards WHERE id = ?");
+    $stmt->execute([$board_id]);
+    $board = $stmt->fetch();
+    if ($board && $board['rating_icon']) {
+        $rating_icon = $board['rating_icon'];
+    }
+} catch (PDOException $e) {
+    // Column might not exist yet, use default
+}
+
 $stmt = $pdo->prepare("
     SELECT i.image_url, i.rating, i.caption, u.name AS user_name
     FROM images i
@@ -19,5 +32,9 @@ $stmt = $pdo->prepare("
     ORDER BY i.created_at DESC
 ");
 $stmt->execute([$board_id]);
+$photos = $stmt->fetchAll();
 
-echo json_encode($stmt->fetchAll());
+echo json_encode([
+    'rating_icon' => $rating_icon,
+    'photos' => $photos
+]);

@@ -96,23 +96,51 @@
 
 </nav>
 
-<!-- BOARDS PANEL -->
-<div id="boardsPanel" class="modal">
-    <div class="modal-content boards-content">
-        <div class="boards-header">
-            <h2>Mis tableros</h2>
-            <button class="close" id="closeBoardsPanel">&times;</button>
-        </div>
-        <div id="boardsList" class="boards-list">
-            <!-- Loaded dynamically -->
-        </div>
-        <div class="boards-create">
-            <input type="text" id="newBoardTitle" placeholder="Nombre del nuevo tablero..." class="caption-input">
-            <button id="createBoardBtn" class="upload-confirm-btn">
-                <i class="ph-plus-circle"></i> Crear tablero
-            </button>
-        </div>
+<!-- BOARDS PANEL (fullscreen) -->
+<div id="boardsPanel" class="boards-overlay" style="display:none">
+
+    <!-- HEADER -->
+    <div class="boards-top-bar">
+        <h1>Mis tableros</h1>
+        <button id="closeBoardsPanel" class="boards-close-btn">&times;</button>
     </div>
+
+    <!-- BOARDS LIST -->
+    <div id="boardsList" class="boards-grid">
+        <!-- Loaded dynamically -->
+    </div>
+
+    <!-- CREATE BOARD FORM (collapsible) -->
+    <div id="createBoardSection" class="create-board-section">
+
+        <!-- Toggle button -->
+        <button id="toggleCreateBoard" class="create-board-toggle">
+            <i class="ph-plus-circle"></i> Nuevo tablero
+        </button>
+
+        <!-- Form (hidden by default) -->
+        <div id="createBoardForm" class="create-board-form" style="display:none">
+            <input type="text" id="newBoardTitle" placeholder="Nombre del tablero" class="cb-input" required>
+            <input type="text" id="newBoardDesc" placeholder="Descripción (opcional)" class="cb-input cb-input-light">
+
+            <!-- Icon picker -->
+            <div class="icon-picker">
+                <label class="icon-picker-label">Ícono de rating</label>
+                <div class="icon-picker-grid" id="iconGrid">
+                    <!-- Filled by JS -->
+                </div>
+                <div class="icon-custom-row">
+                    <input type="text" id="customIcon" placeholder="O escribe tu emoji..." class="cb-input cb-input-small" maxlength="2">
+                    <span id="iconPreview" class="icon-preview-badge">⭐</span>
+                </div>
+            </div>
+
+            <button id="createBoardBtn" class="cb-submit">Crear tablero</button>
+            <button id="cancelCreateBoard" class="cb-cancel">Cancelar</button>
+        </div>
+
+    </div>
+
 </div>
 
 <!-- UPLOAD MODAL -->

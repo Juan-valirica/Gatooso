@@ -1,52 +1,66 @@
 // ===============================
 // GLOBAL STATE
 // ===============================
-let lastScrollY = 0;
-const SCROLL_THRESHOLD = 40;
-let selectedFile = null;
-let currentBoardId = null;
+var lastScrollY = 0;
+var SCROLL_THRESHOLD = 40;
+var selectedFile = null;
+var currentBoardId = null;
+var currentRatingIcon = '⭐';
+var selectedIcon = '⭐';
+
+var ICON_OPTIONS = [
+    '⭐','🔥','🍆','💃','🤙','😏',
+    '💋','🎯','🏆','👀','🌶️','💎',
+    '🍑','😈','🦄','🫦'
+];
 
 // ===============================
 // ELEMENTS
 // ===============================
-const storiesBar = document.getElementById('storiesBar');
-const fab = document.querySelector('.fab');
-const modal = document.getElementById('addModal');
-const bottomNavButtons = document.querySelectorAll('.nav-btn');
-const photoGrid = document.getElementById('photoGrid');
-const membersBar = document.getElementById('membersBar');
+var storiesBar = document.getElementById('storiesBar');
+var fab = document.querySelector('.fab');
+var modal = document.getElementById('addModal');
+var bottomNavButtons = document.querySelectorAll('.nav-btn');
+var photoGrid = document.getElementById('photoGrid');
+var membersBar = document.getElementById('membersBar');
 
-// Upload elements
-const uploadStep1 = document.getElementById('uploadStep1');
-const uploadStep2 = document.getElementById('uploadStep2');
-const uploadStep3 = document.getElementById('uploadStep3');
-const photoInput = document.getElementById('photoInput');
-const photoPreview = document.getElementById('photoPreview');
-const captionInput = document.getElementById('captionInput');
-const confirmUpload = document.getElementById('confirmUpload');
-const cancelUpload = document.getElementById('cancelUpload');
+// Upload
+var uploadStep1 = document.getElementById('uploadStep1');
+var uploadStep2 = document.getElementById('uploadStep2');
+var uploadStep3 = document.getElementById('uploadStep3');
+var photoInput = document.getElementById('photoInput');
+var photoPreview = document.getElementById('photoPreview');
+var captionInput = document.getElementById('captionInput');
+var confirmUpload = document.getElementById('confirmUpload');
+var cancelUpload = document.getElementById('cancelUpload');
 
-// Boards elements
-const navHome = document.getElementById('navHome');
-const boardsPanel = document.getElementById('boardsPanel');
-const boardsList = document.getElementById('boardsList');
-const closeBoardsPanel = document.getElementById('closeBoardsPanel');
-const newBoardTitle = document.getElementById('newBoardTitle');
-const createBoardBtn = document.getElementById('createBoardBtn');
+// Boards
+var navHome = document.getElementById('navHome');
+var boardsPanel = document.getElementById('boardsPanel');
+var boardsList = document.getElementById('boardsList');
+var closeBoardsPanelBtn = document.getElementById('closeBoardsPanel');
+var toggleCreateBoard = document.getElementById('toggleCreateBoard');
+var createBoardForm = document.getElementById('createBoardForm');
+var newBoardTitle = document.getElementById('newBoardTitle');
+var newBoardDesc = document.getElementById('newBoardDesc');
+var createBoardBtn = document.getElementById('createBoardBtn');
+var cancelCreateBoard = document.getElementById('cancelCreateBoard');
+var iconGrid = document.getElementById('iconGrid');
+var customIcon = document.getElementById('customIcon');
+var iconPreview = document.getElementById('iconPreview');
 
 // ===============================
-// INIT — Load saved board or show boards panel
+// INIT
 // ===============================
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', function() {
     currentBoardId = sessionStorage.getItem('currentBoardId');
-
     if (currentBoardId) {
         currentBoardId = parseInt(currentBoardId);
         loadBoard();
     } else {
-        // No board selected — open boards panel automatically
         openBoardsPanel();
     }
+    buildIconGrid();
 });
 
 function loadBoard() {
@@ -57,99 +71,152 @@ function loadBoard() {
 }
 
 // ===============================
-// STORIES BAR HIDE / SHOW ON SCROLL
+// SCROLL — Hide/show header
 // ===============================
-window.addEventListener('scroll', () => {
-    const currentScrollY = window.scrollY;
-
+window.addEventListener('scroll', function() {
+    var sy = window.scrollY;
     if (!storiesBar) return;
-
-    if (currentScrollY > lastScrollY && currentScrollY > SCROLL_THRESHOLD) {
+    if (sy > lastScrollY && sy > SCROLL_THRESHOLD) {
         storiesBar.style.transform = 'translateY(-110%)';
         storiesBar.style.opacity = '0';
     } else {
         storiesBar.style.transform = 'translateY(0)';
         storiesBar.style.opacity = '1';
     }
-
-    lastScrollY = currentScrollY;
+    lastScrollY = sy;
 });
 
 // ===============================
 // BOARDS PANEL
 // ===============================
 if (navHome) {
-    navHome.addEventListener('click', (e) => {
+    navHome.addEventListener('click', function(e) {
         e.stopPropagation();
         openBoardsPanel();
     });
 }
-
-if (closeBoardsPanel) {
-    closeBoardsPanel.addEventListener('click', () => {
-        closeBoardsPanelFn();
-    });
-}
-
-if (boardsPanel) {
-    boardsPanel.addEventListener('click', (e) => {
-        if (e.target === boardsPanel) {
-            closeBoardsPanelFn();
-        }
+if (closeBoardsPanelBtn) {
+    closeBoardsPanelBtn.addEventListener('click', function() {
+        closeBoardsPanel();
     });
 }
 
 function openBoardsPanel() {
     loadBoardsList();
-    boardsPanel.style.display = 'flex';
+    boardsPanel.style.display = '';
     document.body.style.overflow = 'hidden';
+    // Reset create form
+    if (createBoardForm) createBoardForm.style.display = 'none';
+    if (toggleCreateBoard) toggleCreateBoard.style.display = '';
 }
 
-function closeBoardsPanelFn() {
+function closeBoardsPanel() {
     boardsPanel.style.display = 'none';
     document.body.style.overflow = '';
 }
 
+// ===============================
+// BOARDS LIST
+// ===============================
 function loadBoardsList() {
-    boardsList.innerHTML = '<p class="boards-loading">Cargando...</p>';
+    boardsList.innerHTML = '<div class="boards-loading-state"><div class="spinner"></div></div>';
 
     fetch('/app/api/get-boards.php')
-        .then(res => res.json())
-        .then(data => {
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
             boardsList.innerHTML = '';
 
             if (!data.boards || data.boards.length === 0) {
-                boardsList.innerHTML = '<div class="boards-empty"><p>Aún no tienes tableros.</p><p>Crea tu primero para comenzar.</p></div>';
+                boardsList.innerHTML =
+                    '<div class="boards-empty-state">' +
+                    '<div class="boards-empty-icon">📋</div>' +
+                    '<h3>Sin tableros aún</h3>' +
+                    '<p>Crea tu primer tablero para empezar a jugar con tus amigos.</p>' +
+                    '</div>';
                 return;
             }
 
-            data.boards.forEach(board => {
-                var el = document.createElement('button');
-                el.className = 'board-item';
-                if (currentBoardId && parseInt(board.id) === currentBoardId) {
-                    el.classList.add('board-active');
-                }
-                el.innerHTML = '<span class="board-title">' + escapeHtml(board.title) + '</span>' +
-                    '<span class="board-meta">' + board.member_count + ' miembro' + (board.member_count != 1 ? 's' : '') + '</span>';
-                el.addEventListener('click', function() {
+            data.boards.forEach(function(board) {
+                var isActive = currentBoardId && parseInt(board.id) === currentBoardId;
+                var icon = board.rating_icon || '⭐';
+                var desc = board.description || 'Sin descripción';
+                var members = parseInt(board.member_count);
+                var role = board.role === 'owner' ? 'Creador' : (board.role === 'admin' ? 'Admin' : 'Miembro');
+
+                var card = document.createElement('div');
+                card.className = 'board-card' + (isActive ? ' board-card-active' : '');
+                card.innerHTML =
+                    '<div class="board-card-top">' +
+                        '<span class="board-card-icon">' + icon + '</span>' +
+                        '<div class="board-card-info">' +
+                            '<span class="board-card-title">' + escapeHtml(board.title) + '</span>' +
+                            '<span class="board-card-desc">' + escapeHtml(desc) + '</span>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="board-card-bottom">' +
+                        '<span class="board-card-members">' + members + ' miembro' + (members !== 1 ? 's' : '') + '</span>' +
+                        '<span class="board-card-role">' + role + '</span>' +
+                    '</div>' +
+                    '<div class="board-card-actions">' +
+                        '<button class="board-card-enter">Entrar</button>' +
+                        '<button class="board-card-invite">Invitar</button>' +
+                    '</div>';
+
+                // Enter board
+                card.querySelector('.board-card-enter').addEventListener('click', function() {
                     selectBoard(parseInt(board.id));
                 });
-                boardsList.appendChild(el);
+
+                // Invite
+                card.querySelector('.board-card-invite').addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    shareInviteLink(parseInt(board.id));
+                });
+
+                boardsList.appendChild(card);
             });
         })
         .catch(function() {
-            boardsList.innerHTML = '<p class="boards-loading">Error al cargar tableros</p>';
+            boardsList.innerHTML =
+                '<div class="boards-empty-state">' +
+                '<p>No se pudieron cargar los tableros.</p>' +
+                '</div>';
         });
 }
 
 function selectBoard(boardId) {
     currentBoardId = boardId;
     sessionStorage.setItem('currentBoardId', boardId);
-    closeBoardsPanelFn();
+    closeBoardsPanel();
     loadBoard();
 }
 
-// Create board
+// ===============================
+// CREATE BOARD
+// ===============================
+if (toggleCreateBoard) {
+    toggleCreateBoard.addEventListener('click', function() {
+        toggleCreateBoard.style.display = 'none';
+        createBoardForm.style.display = '';
+        newBoardTitle.focus();
+    });
+}
+if (cancelCreateBoard) {
+    cancelCreateBoard.addEventListener('click', function() {
+        createBoardForm.style.display = 'none';
+        toggleCreateBoard.style.display = '';
+        resetCreateForm();
+    });
+}
+
+function resetCreateForm() {
+    if (newBoardTitle) newBoardTitle.value = '';
+    if (newBoardDesc) newBoardDesc.value = '';
+    if (customIcon) customIcon.value = '';
+    selectedIcon = '⭐';
+    updateIconSelection();
+}
+
 if (createBoardBtn) {
     createBoardBtn.addEventListener('click', function() {
         var title = newBoardTitle.value.trim();
@@ -159,52 +226,85 @@ if (createBoardBtn) {
         }
 
         createBoardBtn.disabled = true;
+        createBoardBtn.textContent = 'Creando...';
 
-        var formData = new FormData();
-        formData.append('title', title);
+        var fd = new FormData();
+        fd.append('title', title);
+        fd.append('description', newBoardDesc.value.trim());
+        fd.append('rating_icon', selectedIcon);
 
-        fetch('/app/api/create-board.php', {
-            method: 'POST',
-            body: formData
-        })
-        .then(function(res) { return res.json(); })
-        .then(function(data) {
-            createBoardBtn.disabled = false;
-            if (data.success) {
-                newBoardTitle.value = '';
-                selectBoard(data.board_id);
-            } else {
-                alert(data.message || 'Error al crear el tablero');
-            }
-        })
-        .catch(function() {
-            createBoardBtn.disabled = false;
-            alert('Error de conexión');
-        });
+        fetch('/app/api/create-board.php', { method: 'POST', body: fd })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                createBoardBtn.disabled = false;
+                createBoardBtn.textContent = 'Crear tablero';
+                if (data.success) {
+                    resetCreateForm();
+                    selectBoard(data.board_id);
+                } else {
+                    alert(data.message || 'Error al crear el tablero');
+                }
+            })
+            .catch(function() {
+                createBoardBtn.disabled = false;
+                createBoardBtn.textContent = 'Crear tablero';
+                alert('Error de conexión. Verifica tu internet.');
+            });
     });
 }
 
 // ===============================
-// MODAL OPEN / CLOSE (Photo upload)
+// ICON PICKER
+// ===============================
+function buildIconGrid() {
+    if (!iconGrid) return;
+    iconGrid.innerHTML = '';
+    ICON_OPTIONS.forEach(function(icon) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'icon-option' + (icon === selectedIcon ? ' icon-selected' : '');
+        btn.textContent = icon;
+        btn.addEventListener('click', function() {
+            selectedIcon = icon;
+            if (customIcon) customIcon.value = '';
+            updateIconSelection();
+        });
+        iconGrid.appendChild(btn);
+    });
+}
+
+function updateIconSelection() {
+    if (iconPreview) iconPreview.textContent = selectedIcon;
+    var btns = iconGrid ? iconGrid.querySelectorAll('.icon-option') : [];
+    btns.forEach(function(b) {
+        b.classList.toggle('icon-selected', b.textContent === selectedIcon);
+    });
+}
+
+if (customIcon) {
+    customIcon.addEventListener('input', function() {
+        var val = customIcon.value.trim();
+        if (val) {
+            selectedIcon = val;
+            updateIconSelection();
+        }
+    });
+}
+
+// ===============================
+// UPLOAD MODAL
 // ===============================
 if (fab && modal) {
-    fab.addEventListener('click', () => {
-        if (!currentBoardId) {
-            openBoardsPanel();
-            return;
-        }
+    fab.addEventListener('click', function() {
+        if (!currentBoardId) { openBoardsPanel(); return; }
         openModal();
     });
 }
-
 if (modal) {
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
-            closeModal();
-        }
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) closeModal();
     });
-
-    document.querySelectorAll('#addModal .close').forEach(btn => {
+    document.querySelectorAll('#addModal .close').forEach(function(btn) {
         btn.addEventListener('click', closeModal);
     });
 }
@@ -214,13 +314,11 @@ function openModal() {
     modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
 }
-
 function closeModal() {
     modal.style.display = 'none';
     document.body.style.overflow = '';
     resetUploadState();
 }
-
 function resetUploadState() {
     selectedFile = null;
     if (photoInput) photoInput.value = '';
@@ -230,20 +328,14 @@ function resetUploadState() {
     if (uploadStep3) uploadStep3.style.display = 'none';
 }
 
-// ===============================
-// PHOTO UPLOAD FLOW
-// ===============================
-
-// Step 1 -> Step 2: File selected
+// File selected
 if (photoInput) {
-    photoInput.addEventListener('change', (e) => {
-        const file = e.target.files[0];
+    photoInput.addEventListener('change', function(e) {
+        var file = e.target.files[0];
         if (!file) return;
-
         selectedFile = file;
-
-        const reader = new FileReader();
-        reader.onload = (ev) => {
+        var reader = new FileReader();
+        reader.onload = function(ev) {
             photoPreview.src = ev.target.result;
             uploadStep1.style.display = 'none';
             uploadStep2.style.display = '';
@@ -251,92 +343,84 @@ if (photoInput) {
         reader.readAsDataURL(file);
     });
 }
-
-// Step 2 -> Back to Step 1
 if (cancelUpload) {
-    cancelUpload.addEventListener('click', (e) => {
+    cancelUpload.addEventListener('click', function(e) {
         e.stopPropagation();
         resetUploadState();
     });
 }
 
-// Step 2 -> Step 3: Confirm upload
+// Confirm upload
 if (confirmUpload) {
-    confirmUpload.addEventListener('click', () => {
+    confirmUpload.addEventListener('click', function() {
         if (!selectedFile || !currentBoardId) return;
-
         uploadStep2.style.display = 'none';
         uploadStep3.style.display = '';
 
-        const formData = new FormData();
-        formData.append('photo', selectedFile);
-        formData.append('caption', captionInput.value.trim());
-        formData.append('board_id', currentBoardId);
+        var fd = new FormData();
+        fd.append('photo', selectedFile);
+        fd.append('caption', captionInput.value.trim());
+        fd.append('board_id', currentBoardId);
 
-        fetch('/app/api/upload-photo.php', {
-            method: 'POST',
-            body: formData
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                closeModal();
-                loadPhotos();
-                loadBoardMembers();
-            } else {
-                alert(data.message || 'Error al subir la foto');
-                resetUploadState();
-            }
-        })
-        .catch(() => {
-            alert('Error de conexión. Intenta de nuevo.');
-            resetUploadState();
-        });
+        fetch('/app/api/upload-photo.php', { method: 'POST', body: fd })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success) { closeModal(); loadPhotos(); loadBoardMembers(); }
+                else { alert(data.message || 'Error al subir la foto'); resetUploadState(); }
+            })
+            .catch(function() { alert('Error de conexión.'); resetUploadState(); });
     });
 }
 
 // ===============================
-// BOTTOM NAV ACTIVE STATE
+// NAV ACTIVE STATE
 // ===============================
-bottomNavButtons.forEach(button => {
-    button.addEventListener('click', () => {
-        bottomNavButtons.forEach(btn => btn.classList.remove('active'));
+bottomNavButtons.forEach(function(button) {
+    button.addEventListener('click', function() {
+        bottomNavButtons.forEach(function(b) { b.classList.remove('active'); });
         button.classList.add('active');
     });
 });
 
 // ===============================
-// LOAD PHOTOS FROM DATABASE
+// LOAD PHOTOS
 // ===============================
 function loadPhotos() {
     if (!photoGrid || !currentBoardId) return;
 
     fetch('/app/api/get-photos.php?board_id=' + currentBoardId)
-        .then(res => res.json())
-        .then(data => {
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
             photoGrid.innerHTML = '';
 
-            if (!data || data.length === 0) {
+            var icon = '⭐';
+            var photos = data;
+
+            // New API format returns { rating_icon, photos }
+            if (data && data.photos) {
+                icon = data.rating_icon || '⭐';
+                photos = data.photos;
+                currentRatingIcon = icon;
+            }
+
+            if (!photos || photos.length === 0) {
                 renderFounderState();
                 return;
             }
 
-            data.forEach(photo => {
-                const item = document.createElement('div');
+            photos.forEach(function(photo) {
+                var item = document.createElement('div');
                 item.className = 'grid-item';
-
-                item.innerHTML = '<img src="' + escapeHtml(photo.image_url) + '" alt="Foto del reto">' +
+                item.innerHTML =
+                    '<img src="' + escapeHtml(photo.image_url) + '" alt="Foto">' +
                     '<div class="rating-chip">' +
-                    '<span class="star">&#11088;</span>' +
+                    '<span class="star">' + icon + '</span>' +
                     '<span class="rating-value">' + photo.rating + '</span>' +
                     '</div>';
-
                 photoGrid.appendChild(item);
             });
         })
-        .catch(() => {
-            renderTechnicalError();
-        });
+        .catch(function() { renderTechnicalError(); });
 }
 
 // ===============================
@@ -346,54 +430,38 @@ function loadBoardMembers() {
     if (!membersBar || !currentBoardId) return;
 
     fetch('/app/api/get-board-members.php?board_id=' + currentBoardId)
-        .then(res => res.json())
-        .then(data => {
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
             membersBar.innerHTML = '';
 
-            // Invite button (always first, far left)
             var inviteEl = document.createElement('div');
             inviteEl.className = 'story story-invite';
             inviteEl.innerHTML = '<span class="invite-icon">+</span>';
             inviteEl.addEventListener('click', function() {
-                shareInviteLink(data.board_id);
+                shareInviteLink(data.board_id || currentBoardId);
             });
             membersBar.appendChild(inviteEl);
 
-            // Members
             if (data.members && data.members.length > 0) {
                 data.members.forEach(function(member) {
                     var el = document.createElement('div');
                     el.className = 'story';
-                    var initials = getInitials(member.name);
-                    el.innerHTML = '<span class="member-avatar">' + initials + '</span>';
+                    el.innerHTML = '<span class="member-avatar">' + getInitials(member.name) + '</span>';
                     el.title = member.name;
                     membersBar.appendChild(el);
                 });
             }
         })
-        .catch(function() {
-            // Silently fail
-        });
+        .catch(function() {});
 }
 
-function getInitials(name) {
-    if (!name) return '?';
-    var parts = name.trim().split(' ');
-    if (parts.length >= 2) {
-        return (parts[0][0] + parts[1][0]).toUpperCase();
-    }
-    return parts[0].substring(0, 2).toUpperCase();
-}
-
+// ===============================
+// INVITE
+// ===============================
 function shareInviteLink(boardId) {
     var link = window.location.origin + '/app/auth/register.php?board=' + (boardId || '');
-
     if (navigator.share) {
-        navigator.share({
-            title: 'Gatooso',
-            text: 'Unite a mi tablero en Gatooso',
-            url: link
-        }).catch(function() {});
+        navigator.share({ title: 'Gatooso', text: 'Unite a mi tablero en Gatooso', url: link }).catch(function() {});
     } else {
         navigator.clipboard.writeText(link).then(function() {
             alert('Link de invitación copiado');
@@ -404,44 +472,44 @@ function shareInviteLink(boardId) {
 }
 
 // ===============================
-// FOUNDER STATE (NO PHOTOS YET)
+// EMPTY / ERROR STATES
 // ===============================
 function renderFounderState() {
-    photoGrid.innerHTML = '<div class="empty-state"><div class="empty-inner">' +
+    photoGrid.innerHTML =
+        '<div class="empty-state"><div class="empty-inner">' +
         '<h2>Este reto aún no tiene historia</h2>' +
-        '<p>Atrévete a ser la primera persona que lo inicia. Los retos no empiezan solos. Empiezan con alguien como tú.</p>' +
-        '<button class="empty-cta">Iniciar el reto</button>' +
+        '<p>Atrévete a ser la primera persona que lo inicia. Los retos no empiezan solos.</p>' +
+        '<button class="empty-cta">Subir foto</button>' +
         '</div></div>';
-
     var cta = document.querySelector('.empty-cta');
-    if (cta && fab) {
-        cta.addEventListener('click', function() { fab.click(); });
-    }
+    if (cta && fab) cta.addEventListener('click', function() { fab.click(); });
 }
 
-// ===============================
-// TECHNICAL ERROR STATE
-// ===============================
 function renderTechnicalError() {
-    photoGrid.innerHTML = '<div class="empty-state"><div class="empty-inner">' +
-        '<h2>Algo se nos cruzó</h2>' +
-        '<p>No es tu culpa. Intenta de nuevo en un momento.</p>' +
+    photoGrid.innerHTML =
+        '<div class="empty-state"><div class="empty-inner">' +
+        '<h2>Algo se nos cruzó</h2><p>No es tu culpa. Intenta de nuevo.</p>' +
         '</div></div>';
 }
 
 // ===============================
 // UTILS
 // ===============================
-function escapeHtml(str) {
-    if (!str) return '';
-    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+function getInitials(name) {
+    if (!name) return '?';
+    var p = name.trim().split(' ');
+    return p.length >= 2 ? (p[0][0] + p[1][0]).toUpperCase() : p[0].substring(0, 2).toUpperCase();
+}
+function escapeHtml(s) {
+    if (!s) return '';
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 // ===============================
-// SERVICE WORKER (PWA)
+// SERVICE WORKER
 // ===============================
 if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
+    window.addEventListener('load', function() {
         navigator.serviceWorker.register('/app/sw.js');
     });
 }
