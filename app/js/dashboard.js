@@ -137,6 +137,7 @@ if (confirmUpload) {
             if (data.success) {
                 closeModal();
                 loadPhotos();
+                loadBoardMembers();
             } else {
                 alert(data.message || 'Error al subir la foto');
                 resetUploadState();

@@ -406,7 +406,9 @@ body {
     pointer-events: auto;
 }
 
-.floating-inner * {
+.floating-inner .challenge-text,
+.floating-inner .challenge-chip,
+.floating-inner .header-top {
     color: #1C1C1E;
 }
 
