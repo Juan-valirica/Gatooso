@@ -23,10 +23,17 @@
     </form>
 
     <span class="auth-link">
-        ¿Primera vez aquí? <a href="register.php">Crear cuenta</a>
+        ¿Primera vez aquí? <a href="register.php" id="switchAuthLink">Crear cuenta</a>
     </span>
 </div>
 
+<script>
+// Preserve query params when switching between login/register
+const params = window.location.search;
+if (params) {
+    document.getElementById('switchAuthLink').href = 'register.php' + params;
+}
+</script>
 <script src="../js/auth.js"></script>
 </body>
 </html>
