@@ -251,10 +251,25 @@ function loadBoardsList() {
                 var icon = board.rating_icon || '⭐';
                 var desc = board.description || 'Sin descripción';
                 var members = parseInt(board.member_count);
-                var role = board.role === 'owner' ? 'Creador' : (board.role === 'admin' ? 'Admin' : 'Miembro');
+                var isOwner = board.role === 'owner';
+                var roleLabel = isOwner ? 'Creador' : (board.role === 'admin' ? 'Admin' : 'Miembro');
 
                 var card = document.createElement('div');
                 card.className = 'board-card' + (isActive ? ' board-card-active' : '');
+
+                // Build menu items based on role
+                var menuItems = '';
+                if (isOwner) {
+                    menuItems =
+                        '<button class="dropdown-item edit-board-btn" data-board-id="' + board.id + '">' +
+                            '<i class="ph-pencil-simple"></i> Editar tablero' +
+                        '</button>';
+                }
+                menuItems +=
+                    '<button class="dropdown-item danger leave-board-btn" data-board-id="' + board.id + '" data-is-owner="' + isOwner + '">' +
+                        '<i class="ph-sign-out"></i> Salir del tablero' +
+                    '</button>';
+
                 card.innerHTML =
                     '<div class="board-card-top">' +
                         '<span class="board-card-icon">' + icon + '</span>' +
@@ -262,15 +277,46 @@ function loadBoardsList() {
                             '<span class="board-card-title">' + escapeHtml(board.title) + '</span>' +
                             '<span class="board-card-desc">' + escapeHtml(desc) + '</span>' +
                         '</div>' +
+                        '<div class="board-card-menu">' +
+                            '<button class="board-card-menu-btn"><i class="ph-dots-three-vertical"></i></button>' +
+                            '<div class="board-card-dropdown">' + menuItems + '</div>' +
+                        '</div>' +
                     '</div>' +
                     '<div class="board-card-bottom">' +
                         '<span class="board-card-members">' + members + ' miembro' + (members !== 1 ? 's' : '') + '</span>' +
-                        '<span class="board-card-role">' + role + '</span>' +
+                        '<span class="board-card-role">' + roleLabel + '</span>' +
                     '</div>' +
                     '<div class="board-card-actions">' +
                         '<button class="board-card-enter">Entrar</button>' +
                         '<button class="board-card-invite">Invitar</button>' +
                     '</div>';
+
+                // Menu toggle
+                var menuBtn = card.querySelector('.board-card-menu-btn');
+                var dropdown = card.querySelector('.board-card-dropdown');
+                menuBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    closeAllDropdowns();
+                    dropdown.classList.toggle('show');
+                });
+
+                // Edit button (if owner)
+                var editBtn = card.querySelector('.edit-board-btn');
+                if (editBtn) {
+                    editBtn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        dropdown.classList.remove('show');
+                        openEditBoardModal(parseInt(board.id));
+                    });
+                }
+
+                // Leave button
+                var leaveBtn = card.querySelector('.leave-board-btn');
+                leaveBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    dropdown.classList.remove('show');
+                    openLeaveBoardModal(parseInt(board.id), isOwner);
+                });
 
                 card.querySelector('.board-card-enter').addEventListener('click', function() {
                     selectBoard(parseInt(board.id));
@@ -282,6 +328,9 @@ function loadBoardsList() {
 
                 boardsList.appendChild(card);
             });
+
+            // Close dropdowns when clicking outside
+            document.addEventListener('click', closeAllDropdowns);
         })
         .catch(function() {
             boardsList.innerHTML =
@@ -297,6 +346,263 @@ function selectBoard(boardId) {
     closeBoardsPanel();
     loadBoard();
 }
+
+// ===============================
+// BOARD MANAGEMENT
+// ===============================
+var editBoardModal = document.getElementById('editBoardModal');
+var leaveBoardModal = document.getElementById('leaveBoardModal');
+var selectedNewOwnerId = null;
+
+function closeAllDropdowns() {
+    document.querySelectorAll('.board-card-dropdown.show').forEach(function(d) {
+        d.classList.remove('show');
+    });
+}
+
+function openEditBoardModal(boardId) {
+    fetch('/app/api/get-board-info.php?board_id=' + boardId)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (!data.success) {
+                alert(data.message || 'Error al cargar información');
+                return;
+            }
+
+            document.getElementById('editBoardId').value = boardId;
+            document.getElementById('editBoardTitle').value = data.board.title || '';
+            document.getElementById('editBoardDesc').value = data.board.description || '';
+            document.getElementById('editBoardIcon').value = data.board.rating_icon || '⭐';
+
+            // Build icon picker
+            var iconPicker = document.getElementById('editIconPicker');
+            iconPicker.innerHTML = '';
+            ICON_OPTIONS.forEach(function(icon) {
+                var btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'edit-icon-btn' + (icon === data.board.rating_icon ? ' selected' : '');
+                btn.textContent = icon;
+                btn.addEventListener('click', function() {
+                    iconPicker.querySelectorAll('.edit-icon-btn').forEach(function(b) { b.classList.remove('selected'); });
+                    btn.classList.add('selected');
+                    document.getElementById('editBoardIcon').value = icon;
+                });
+                iconPicker.appendChild(btn);
+            });
+
+            editBoardModal.style.display = 'flex';
+        })
+        .catch(function() {
+            alert('Error de conexión');
+        });
+}
+
+function closeEditBoardModal() {
+    if (editBoardModal) editBoardModal.style.display = 'none';
+}
+
+function saveEditBoard() {
+    var boardId = document.getElementById('editBoardId').value;
+    var title = document.getElementById('editBoardTitle').value.trim();
+    var desc = document.getElementById('editBoardDesc').value.trim();
+    var icon = document.getElementById('editBoardIcon').value;
+
+    if (!title) {
+        alert('El nombre es requerido');
+        return;
+    }
+
+    var formData = new FormData();
+    formData.append('board_id', boardId);
+    formData.append('title', title);
+    formData.append('description', desc);
+    formData.append('rating_icon', icon);
+
+    fetch('/app/api/update-board.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.success) {
+            closeEditBoardModal();
+            loadBoardsList();
+            // Update header if this is the active board
+            if (parseInt(boardId) === currentBoardId) {
+                currentRatingIcon = icon;
+            }
+        } else {
+            alert(data.message || 'Error al guardar');
+        }
+    })
+    .catch(function() {
+        alert('Error de conexión');
+    });
+}
+
+function deleteBoard() {
+    var boardId = document.getElementById('editBoardId').value;
+
+    if (!confirm('¿Estás seguro de que quieres eliminar este tablero? Esta acción no se puede deshacer.')) {
+        return;
+    }
+
+    var formData = new FormData();
+    formData.append('board_id', boardId);
+
+    fetch('/app/api/delete-board.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.success) {
+            closeEditBoardModal();
+            // If deleted the current board, clear it
+            if (parseInt(boardId) === currentBoardId) {
+                currentBoardId = null;
+                sessionStorage.removeItem('currentBoardId');
+            }
+            loadBoardsList();
+        } else {
+            alert(data.message || 'Error al eliminar');
+        }
+    })
+    .catch(function() {
+        alert('Error de conexión');
+    });
+}
+
+function openLeaveBoardModal(boardId, isOwner) {
+    document.getElementById('leaveBoardId').value = boardId;
+    selectedNewOwnerId = null;
+
+    var transferSection = document.getElementById('ownershipTransfer');
+    var memberList = document.getElementById('memberSelectList');
+
+    if (isOwner) {
+        // Owner needs to transfer ownership, fetch members
+        fetch('/app/api/get-board-info.php?board_id=' + boardId)
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (!data.success) {
+                    alert(data.message || 'Error');
+                    return;
+                }
+
+                // Filter out current user from member list
+                var otherMembers = data.members.filter(function(m) {
+                    return window.currentUser && m.id !== window.currentUser.id;
+                });
+
+                if (otherMembers.length === 0) {
+                    // No other members, just show warning
+                    document.getElementById('leaveBoardText').textContent =
+                        'Eres el único miembro. Al salir, el tablero será eliminado.';
+                    transferSection.style.display = 'none';
+                } else {
+                    document.getElementById('leaveBoardText').textContent = '';
+                    transferSection.style.display = 'block';
+                    memberList.innerHTML = '';
+
+                    otherMembers.forEach(function(member) {
+                        var item = document.createElement('div');
+                        item.className = 'member-select-item';
+                        item.dataset.memberId = member.id;
+
+                        var avatarContent = member.avatar_url
+                            ? '<img src="' + member.avatar_url + '" alt="">'
+                            : getInitials(member.name);
+
+                        item.innerHTML =
+                            '<div class="member-select-avatar">' + avatarContent + '</div>' +
+                            '<span class="member-select-name">' + escapeHtml(member.name) + '</span>' +
+                            '<span class="member-select-check"><i class="ph-check"></i></span>';
+
+                        item.addEventListener('click', function() {
+                            memberList.querySelectorAll('.member-select-item').forEach(function(i) {
+                                i.classList.remove('selected');
+                            });
+                            item.classList.add('selected');
+                            selectedNewOwnerId = member.id;
+                        });
+
+                        memberList.appendChild(item);
+                    });
+                }
+
+                leaveBoardModal.style.display = 'flex';
+            })
+            .catch(function() {
+                alert('Error de conexión');
+            });
+    } else {
+        // Not owner, simple leave
+        document.getElementById('leaveBoardText').textContent =
+            '¿Estás seguro de que quieres salir de este tablero?';
+        transferSection.style.display = 'none';
+        leaveBoardModal.style.display = 'flex';
+    }
+}
+
+function closeLeaveBoardModal() {
+    if (leaveBoardModal) leaveBoardModal.style.display = 'none';
+}
+
+function confirmLeaveBoard() {
+    var boardId = document.getElementById('leaveBoardId').value;
+    var transferSection = document.getElementById('ownershipTransfer');
+    var needsTransfer = transferSection.style.display !== 'none';
+
+    if (needsTransfer && !selectedNewOwnerId) {
+        alert('Debes elegir un nuevo dueño');
+        return;
+    }
+
+    var formData = new FormData();
+    formData.append('board_id', boardId);
+    if (selectedNewOwnerId) {
+        formData.append('new_owner_id', selectedNewOwnerId);
+    }
+
+    fetch('/app/api/leave-board.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.success) {
+            closeLeaveBoardModal();
+            // If left the current board, clear it
+            if (parseInt(boardId) === currentBoardId) {
+                currentBoardId = null;
+                sessionStorage.removeItem('currentBoardId');
+            }
+            loadBoardsList();
+        } else {
+            alert(data.message || 'Error al salir');
+        }
+    })
+    .catch(function() {
+        alert('Error de conexión');
+    });
+}
+
+// Event listeners for board modals
+document.getElementById('closeEditBoardModal')?.addEventListener('click', closeEditBoardModal);
+document.getElementById('saveEditBoardBtn')?.addEventListener('click', saveEditBoard);
+document.getElementById('deleteBoardBtn')?.addEventListener('click', deleteBoard);
+document.getElementById('closeLeaveBoardModal')?.addEventListener('click', closeLeaveBoardModal);
+document.getElementById('cancelLeaveBtn')?.addEventListener('click', closeLeaveBoardModal);
+document.getElementById('confirmLeaveBtn')?.addEventListener('click', confirmLeaveBoard);
+
+// Close modals on overlay click
+editBoardModal?.addEventListener('click', function(e) {
+    if (e.target === editBoardModal) closeEditBoardModal();
+});
+leaveBoardModal?.addEventListener('click', function(e) {
+    if (e.target === leaveBoardModal) closeLeaveBoardModal();
+});
 
 // ===============================
 // CREATE BOARD

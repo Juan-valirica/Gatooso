@@ -303,6 +303,74 @@
 
 </div>
 
+<!-- EDIT BOARD MODAL -->
+<div id="editBoardModal" class="modal-overlay" style="display:none">
+    <div class="modal-sheet">
+        <div class="modal-sheet-header">
+            <h2>Editar tablero</h2>
+            <button class="modal-sheet-close" id="closeEditBoardModal">&times;</button>
+        </div>
+        <div class="modal-sheet-body">
+            <input type="hidden" id="editBoardId">
+            <div class="profile-field">
+                <label class="profile-label">Nombre del tablero</label>
+                <input type="text" id="editBoardTitle" class="profile-input" placeholder="Nombre">
+            </div>
+            <div class="profile-field">
+                <label class="profile-label">Descripción</label>
+                <input type="text" id="editBoardDesc" class="profile-input" placeholder="Descripción (opcional)">
+            </div>
+            <div class="profile-field">
+                <label class="profile-label">Ícono de rating</label>
+                <div class="edit-icon-picker" id="editIconPicker"></div>
+                <input type="hidden" id="editBoardIcon">
+            </div>
+            <button id="saveEditBoardBtn" class="profile-save-btn">
+                <i class="ph-check"></i> Guardar cambios
+            </button>
+        </div>
+        <div class="modal-sheet-danger">
+            <button id="deleteBoardBtn" class="danger-btn">
+                <i class="ph-trash"></i> Eliminar tablero
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- LEAVE BOARD MODAL -->
+<div id="leaveBoardModal" class="modal-overlay" style="display:none">
+    <div class="modal-sheet">
+        <div class="modal-sheet-header">
+            <h2>Salir del tablero</h2>
+            <button class="modal-sheet-close" id="closeLeaveBoardModal">&times;</button>
+        </div>
+        <div class="modal-sheet-body">
+            <input type="hidden" id="leaveBoardId">
+            <p class="leave-board-text" id="leaveBoardText">
+                ¿Estás seguro de que quieres salir de este tablero?
+            </p>
+
+            <!-- Ownership transfer section (shown only for owners) -->
+            <div id="ownershipTransfer" style="display:none">
+                <p class="ownership-warning">
+                    <i class="ph-warning-circle"></i>
+                    Como eres el dueño, debes elegir quién será el nuevo dueño antes de salir.
+                </p>
+                <div class="member-select-list" id="memberSelectList">
+                    <!-- Filled by JS -->
+                </div>
+            </div>
+
+            <button id="confirmLeaveBtn" class="danger-btn full-width">
+                <i class="ph-sign-out"></i> Salir del tablero
+            </button>
+            <button id="cancelLeaveBtn" class="cancel-btn full-width">
+                Cancelar
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- PWA INSTALL BANNER -->
 <div id="installBanner" class="install-banner" style="display:none">
     <div class="install-banner-content">
