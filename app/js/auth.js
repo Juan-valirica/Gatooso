@@ -18,6 +18,13 @@ if (registerForm) {
 function submitAuth(endpoint, form) {
     const data = new FormData(form);
 
+    // Check for board invite in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const boardId = urlParams.get('board');
+    if (boardId) {
+        data.append('board_id', boardId);
+    }
+
     fetch(endpoint, {
         method: 'POST',
         body: data
@@ -25,7 +32,9 @@ function submitAuth(endpoint, form) {
     .then(res => res.json())
     .then(response => {
         if (response.success) {
-            window.location.href = '/app/';
+            // Redirect to app (with board if invited)
+            const redirect = boardId ? `/app/?board=${boardId}` : '/app/';
+            window.location.href = redirect;
         } else {
             alert(response.message || 'Algo no salió bien');
         }

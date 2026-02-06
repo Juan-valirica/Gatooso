@@ -503,18 +503,19 @@ body {
    =============================== */
 .empty-state {
     grid-column: 1 / -1;
-    min-height: 60vh;
+    min-height: calc(100vh - 340px);
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
     text-align: center;
+    padding-top: 60px;
 }
 .empty-inner {
     max-width: 320px;
     padding: 24px;
 }
-.empty-inner h2 { font-size: 1.4rem; margin-bottom: 12px; }
-.empty-inner p { opacity: 0.8; margin-bottom: 20px; }
+.empty-inner h2 { font-size: 1.4rem; margin-bottom: 12px; color: #221723; }
+.empty-inner p { opacity: 0.8; margin-bottom: 20px; line-height: 1.5; }
 .empty-cta {
     padding: 12px 20px;
     border-radius: 999px;

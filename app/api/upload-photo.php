@@ -81,6 +81,24 @@ if (!$source) {
     exit;
 }
 
+// Fix EXIF orientation (phones often store rotated images)
+if ($mime === 'image/jpeg' && function_exists('exif_read_data')) {
+    $exif = @exif_read_data($file['tmp_name']);
+    if ($exif && isset($exif['Orientation'])) {
+        switch ($exif['Orientation']) {
+            case 3: // 180 degrees
+                $source = imagerotate($source, 180, 0);
+                break;
+            case 6: // 90 degrees CW (phone held upright)
+                $source = imagerotate($source, -90, 0);
+                break;
+            case 8: // 90 degrees CCW
+                $source = imagerotate($source, 90, 0);
+                break;
+        }
+    }
+}
+
 // Resize to max 1200px on longest side
 $orig_w = imagesx($source);
 $orig_h = imagesy($source);
