@@ -142,11 +142,66 @@ if (closeBoardsPanelBtn) {
 }
 
 function openBoardsPanel() {
+    updateWelcomeSection();
     loadBoardsList();
     boardsPanel.style.display = '';
     document.body.style.overflow = 'hidden';
     if (createBoardForm) createBoardForm.style.display = 'none';
     if (toggleCreateBoard) toggleCreateBoard.style.display = '';
+}
+
+// ===============================
+// WELCOME PERSONALIZATION
+// ===============================
+var WELCOME_TAGLINES = [
+    '¿Listo para capturar el momento?',
+    '¿Qué historia vas a contar hoy?',
+    'Tus amigos esperan tu siguiente foto',
+    'El reto de hoy te espera',
+    '¿Cuál será tu próxima obra maestra?',
+    'Comparte lo que te hace único',
+    'La cámara está lista cuando tú lo estés'
+];
+
+function getFirstName(fullName) {
+    if (!fullName) return 'amigo';
+    var firstName = fullName.trim().split(/\s+/)[0];
+    // Normalize: first letter uppercase, rest lowercase
+    return firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase();
+}
+
+function getTimeGreeting() {
+    var hour = new Date().getHours();
+    if (hour >= 5 && hour < 12) return 'Buenos días,';
+    if (hour >= 12 && hour < 19) return 'Buenas tardes,';
+    return 'Buenas noches,';
+}
+
+function getRandomTagline() {
+    return WELCOME_TAGLINES[Math.floor(Math.random() * WELCOME_TAGLINES.length)];
+}
+
+function updateWelcomeSection() {
+    var welcomeAvatar = document.getElementById('welcomeAvatar');
+    var welcomeTime = document.getElementById('welcomeTime');
+    var welcomeName = document.getElementById('welcomeName');
+    var welcomeTagline = document.getElementById('welcomeTagline');
+
+    var userName = window.currentUser ? window.currentUser.name : null;
+    var firstName = getFirstName(userName);
+
+    if (welcomeAvatar) {
+        welcomeAvatar.textContent = firstName.charAt(0).toUpperCase();
+    }
+    if (welcomeTime) {
+        welcomeTime.textContent = getTimeGreeting();
+    }
+    if (welcomeName) {
+        welcomeName.textContent = firstName;
+    }
+    if (welcomeTagline) {
+        welcomeTagline.textContent = getRandomTagline();
+    }
 }
 
 function closeBoardsPanel() {

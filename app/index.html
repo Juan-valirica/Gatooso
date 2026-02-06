@@ -101,10 +101,23 @@
 <!-- BOARDS PANEL (fullscreen) -->
 <div id="boardsPanel" class="boards-overlay" style="display:none">
 
-    <!-- HEADER -->
-    <div class="boards-top-bar">
-        <h1>Mis tableros</h1>
+    <!-- PERSONALIZED WELCOME -->
+    <div class="boards-welcome">
         <button id="closeBoardsPanel" class="boards-close-btn">&times;</button>
+
+        <div class="welcome-content">
+            <div class="welcome-avatar" id="welcomeAvatar">
+                <!-- Initial letter filled by JS -->
+            </div>
+            <div class="welcome-text">
+                <span class="welcome-time" id="welcomeTime">Buenos días,</span>
+                <h1 class="welcome-name" id="welcomeName">amigo</h1>
+            </div>
+        </div>
+
+        <p class="welcome-tagline" id="welcomeTagline">
+            ¿Listo para capturar el momento?
+        </p>
     </div>
 
     <!-- BOARDS LIST -->
