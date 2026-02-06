@@ -1292,12 +1292,15 @@ function loadFriendsList() {
     fetch('/app/api/get-friends.php')
         .then(function(r) { return r.json(); })
         .then(function(data) {
+            console.log('Friends API response:', data);
+
             if (!data.success || !data.friends || data.friends.length === 0) {
+                var debugInfo = data.debug_step ? '<br><small style="color:#999">Debug: ' + data.debug_step + '</small>' : '';
                 friendsList.innerHTML =
                     '<div class="friends-empty">' +
                     '<div class="friends-empty-icon">👥</div>' +
                     '<h3>Aún no tienes amigos</h3>' +
-                    '<p>Únete a tableros con tus amigos para verlos aquí</p>' +
+                    '<p>Únete a tableros con tus amigos para verlos aquí' + debugInfo + '</p>' +
                     '</div>';
                 if (friendsCount) friendsCount.textContent = '0';
                 return;
@@ -1307,7 +1310,8 @@ function loadFriendsList() {
             if (friendsCount) friendsCount.textContent = data.total;
             renderFriendsList(allFriends);
         })
-        .catch(function() {
+        .catch(function(err) {
+            console.error('Friends API error:', err);
             friendsList.innerHTML =
                 '<div class="friends-empty">' +
                 '<p>No se pudieron cargar los amigos</p>' +

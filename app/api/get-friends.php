@@ -21,31 +21,43 @@ try {
         echo json_encode([
             'success' => true,
             'friends' => [],
-            'total' => 0
+            'total' => 0,
+            'debug_step' => 'no_boards',
+            'user_id' => $user_id
         ]);
         exit;
     }
 
     // Step 2: Get all users in those boards (except me)
-    $placeholders = implode(',', array_fill(0, count($myBoards), '?'));
-    $stmt = $pdo->prepare("
-        SELECT DISTINCT
-            u.id,
-            u.name
+    $inClause = implode(',', array_map('intval', $myBoards));
+    $sql = "
+        SELECT DISTINCT u.id, u.name
         FROM users u
         INNER JOIN board_users bu ON bu.user_id = u.id
-        WHERE bu.board_id IN ($placeholders)
+        WHERE bu.board_id IN ($inClause)
         AND u.id != ?
         ORDER BY u.name ASC
-    ");
-    $params = array_merge($myBoards, [$user_id]);
-    $stmt->execute($params);
+    ";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([$user_id]);
     $friends = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    if (empty($friends)) {
+        echo json_encode([
+            'success' => true,
+            'friends' => [],
+            'total' => 0,
+            'debug_step' => 'no_friends_found',
+            'my_boards' => $myBoards,
+            'sql' => $sql
+        ]);
+        exit;
+    }
 
     // Step 3: For each friend, get their shared boards and rating
     $formatted = [];
     foreach ($friends as $friend) {
-        $friendId = $friend['id'];
+        $friendId = (int)$friend['id'];
 
         // Get shared boards
         $stmt = $pdo->prepare("
@@ -53,10 +65,9 @@ try {
             FROM boards b
             INNER JOIN board_users bu ON bu.board_id = b.id
             WHERE bu.user_id = ?
-            AND b.id IN ($placeholders)
+            AND b.id IN ($inClause)
         ");
-        $boardParams = array_merge([$friendId], $myBoards);
-        $stmt->execute($boardParams);
+        $stmt->execute([$friendId]);
         $sharedBoards = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         // Get average rating and photo count
@@ -74,12 +85,12 @@ try {
         $boardNames = array_map(function($b) { return $b['title']; }, $sharedBoards);
 
         $formatted[] = [
-            'id' => (int)$friendId,
+            'id' => $friendId,
             'name' => $friend['name'],
             'shared_boards' => count($sharedBoards),
             'board_names' => $boardNames,
-            'avg_rating' => round((float)$stats['avg_rating'], 1),
-            'photo_count' => (int)$stats['photo_count']
+            'avg_rating' => round((float)($stats['avg_rating'] ?? 0), 1),
+            'photo_count' => (int)($stats['photo_count'] ?? 0)
         ];
     }
 
@@ -101,6 +112,7 @@ try {
     echo json_encode([
         'success' => false,
         'message' => 'Error al cargar amigos',
-        'debug' => $e->getMessage()
+        'debug' => $e->getMessage(),
+        'trace' => $e->getTraceAsString()
     ]);
 }
