@@ -51,13 +51,17 @@ CREATE TABLE IF NOT EXISTS board_users (
 -- 4. CHALLENGES
 -- --------------------------------------------
 CREATE TABLE IF NOT EXISTS challenges (
-    id          INT AUTO_INCREMENT PRIMARY KEY,
-    board_id    INT NOT NULL,
-    title       VARCHAR(255) NOT NULL,
-    description TEXT NULL,
-    created_by  INT NULL,
-    is_library  TINYINT(1) DEFAULT 0,
-    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    id             INT AUTO_INCREMENT PRIMARY KEY,
+    board_id       INT NOT NULL,
+    title          VARCHAR(255) NOT NULL,
+    description    TEXT NULL,
+    created_by     INT NULL,
+    duration_hours INT DEFAULT 72,
+    status         ENUM('queued', 'active', 'completed') DEFAULT 'queued',
+    starts_at      TIMESTAMP NULL,
+    ends_at        TIMESTAMP NULL,
+    is_library     TINYINT(1) DEFAULT 0,
+    created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (board_id)   REFERENCES boards(id) ON DELETE CASCADE,
     FOREIGN KEY (created_by) REFERENCES users(id)  ON DELETE SET NULL
 ) ENGINE=InnoDB;

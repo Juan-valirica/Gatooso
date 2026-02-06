@@ -145,6 +145,63 @@
 
 </div>
 
+<!-- CHALLENGES PANEL (fullscreen) -->
+<div id="challengesPanel" class="challenges-overlay" style="display:none">
+
+    <!-- HEADER -->
+    <div class="challenges-top-bar">
+        <h1>Retos</h1>
+        <button id="closeChallengesPanel" class="challenges-close-btn">&times;</button>
+    </div>
+
+    <!-- ACTIVE CHALLENGE -->
+    <div id="activeChallengeSection" class="active-challenge-section">
+        <div class="section-label">
+            <i class="ph-fire"></i> Reto Activo
+        </div>
+        <div id="activeChallengeCard" class="active-challenge-card">
+            <!-- Loaded dynamically -->
+        </div>
+    </div>
+
+    <!-- QUEUE -->
+    <div id="queueSection" class="queue-section">
+        <div class="section-label">
+            <i class="ph-queue"></i> En cola <span id="queueCount" class="queue-badge">0</span>
+        </div>
+        <div id="queueList" class="queue-list">
+            <!-- Loaded dynamically -->
+        </div>
+    </div>
+
+    <!-- CREATE CHALLENGE -->
+    <div class="create-challenge-section">
+        <button id="toggleCreateChallenge" class="create-challenge-toggle">
+            <i class="ph-plus-circle"></i> Proponer nuevo reto
+        </button>
+
+        <div id="createChallengeForm" class="create-challenge-form" style="display:none">
+            <input type="text" id="newChallengeTitle" placeholder="Título del reto" class="cc-input" required maxlength="100">
+            <textarea id="newChallengeDesc" placeholder="Descripción (opcional)" class="cc-input cc-textarea" maxlength="280"></textarea>
+
+            <div class="cc-duration-picker">
+                <label class="cc-label">Duración del reto</label>
+                <div class="cc-duration-options" id="durationOptions">
+                    <button type="button" class="cc-duration-btn" data-hours="24">1 día</button>
+                    <button type="button" class="cc-duration-btn active" data-hours="72">3 días</button>
+                    <button type="button" class="cc-duration-btn" data-hours="168">1 semana</button>
+                </div>
+            </div>
+
+            <button id="createChallengeBtn" class="cc-submit">
+                <i class="ph-paper-plane-tilt"></i> Proponer reto
+            </button>
+            <button id="cancelCreateChallenge" class="cc-cancel">Cancelar</button>
+        </div>
+    </div>
+
+</div>
+
 <!-- UPLOAD MODAL -->
 <div id="addModal" class="modal">
     <div class="modal-content">

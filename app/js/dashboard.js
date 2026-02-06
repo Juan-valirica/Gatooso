@@ -10,6 +10,8 @@ var selectedIcon = '⭐';
 var currentViewImage = null;
 var viewerOverlay = null;
 var isRatingInProgress = false;
+var countdownInterval = null;
+var selectedDuration = 72;
 
 var ICON_OPTIONS = [
     '⭐','🔥','🍆','💃','🤙','😏',
@@ -53,6 +55,26 @@ var iconGrid = document.getElementById('iconGrid');
 var customIcon = document.getElementById('customIcon');
 var iconPreview = document.getElementById('iconPreview');
 
+// Challenges
+var navChallenges = document.getElementById('navChallenges');
+var challengesPanel = document.getElementById('challengesPanel');
+var closeChallengesPanelBtn = document.getElementById('closeChallengesPanel');
+var activeChallengeCard = document.getElementById('activeChallengeCard');
+var queueList = document.getElementById('queueList');
+var queueCount = document.getElementById('queueCount');
+var toggleCreateChallenge = document.getElementById('toggleCreateChallenge');
+var createChallengeForm = document.getElementById('createChallengeForm');
+var newChallengeTitle = document.getElementById('newChallengeTitle');
+var newChallengeDesc = document.getElementById('newChallengeDesc');
+var createChallengeBtn = document.getElementById('createChallengeBtn');
+var cancelCreateChallenge = document.getElementById('cancelCreateChallenge');
+var durationOptions = document.getElementById('durationOptions');
+
+// Header challenge elements
+var challengeTitle = document.querySelector('.challenge-title');
+var challengeDescription = document.querySelector('.challenge-description');
+var challengeCountdown = document.querySelector('.challenge-countdown');
+
 // ===============================
 // INIT
 // ===============================
@@ -65,6 +87,8 @@ document.addEventListener('DOMContentLoaded', function() {
         openBoardsPanel();
     }
     buildIconGrid();
+    initDurationPicker();
+    initChallengesPanel();
 });
 
 function loadBoard() {
@@ -72,6 +96,7 @@ function loadBoard() {
     storiesBar.style.display = '';
     loadPhotos();
     loadBoardMembers();
+    loadActiveChallenge();
 }
 
 // ===============================
@@ -892,6 +917,296 @@ function getInitials(name) {
 function escapeHtml(s) {
     if (!s) return '';
     return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ===============================
+// CHALLENGES PANEL
+// ===============================
+function initChallengesPanel() {
+    if (navChallenges) {
+        navChallenges.addEventListener('click', function(e) {
+            e.stopPropagation();
+            openChallengesPanel();
+        });
+    }
+    if (closeChallengesPanelBtn) {
+        closeChallengesPanelBtn.addEventListener('click', closeChallengesPanel);
+    }
+    if (toggleCreateChallenge) {
+        toggleCreateChallenge.addEventListener('click', function() {
+            toggleCreateChallenge.style.display = 'none';
+            createChallengeForm.style.display = '';
+            newChallengeTitle.focus();
+        });
+    }
+    if (cancelCreateChallenge) {
+        cancelCreateChallenge.addEventListener('click', function() {
+            createChallengeForm.style.display = 'none';
+            toggleCreateChallenge.style.display = '';
+            resetChallengeForm();
+        });
+    }
+    if (createChallengeBtn) {
+        createChallengeBtn.addEventListener('click', submitNewChallenge);
+    }
+}
+
+function openChallengesPanel() {
+    if (!currentBoardId) { openBoardsPanel(); return; }
+    loadChallenges();
+    challengesPanel.style.display = '';
+    document.body.style.overflow = 'hidden';
+    if (createChallengeForm) createChallengeForm.style.display = 'none';
+    if (toggleCreateChallenge) toggleCreateChallenge.style.display = '';
+}
+
+function closeChallengesPanel() {
+    challengesPanel.style.display = 'none';
+    document.body.style.overflow = '';
+}
+
+function loadChallenges() {
+    if (!currentBoardId) return;
+
+    activeChallengeCard.innerHTML = '<div class="boards-loading-state"><div class="spinner"></div></div>';
+    queueList.innerHTML = '<div class="boards-loading-state"><div class="spinner"></div></div>';
+
+    fetch('/app/api/get-challenges.php?board_id=' + currentBoardId)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (!data.success) return;
+
+            // Render active challenge
+            renderActiveChallengeCard(data.active);
+
+            // Update queue count
+            if (queueCount) queueCount.textContent = data.queued_count;
+
+            // Render queue
+            renderQueueList(data.queued);
+        })
+        .catch(function() {
+            activeChallengeCard.innerHTML = '<div class="ac-empty"><p>Error al cargar</p></div>';
+        });
+}
+
+function renderActiveChallengeCard(challenge) {
+    if (!challenge) {
+        activeChallengeCard.innerHTML =
+            '<div class="ac-empty">' +
+            '<div class="ac-empty-icon">🎯</div>' +
+            '<h3>Sin reto activo</h3>' +
+            '<p>Propón el primer reto para empezar a jugar con tu grupo.</p>' +
+            '</div>';
+        return;
+    }
+
+    var timeLeft = getTimeRemaining(challenge.ends_at);
+
+    activeChallengeCard.innerHTML =
+        '<div class="ac-header">' +
+            '<span class="ac-title">' + escapeHtml(challenge.title) + '</span>' +
+            '<span class="ac-timer" id="acTimer">' + formatTimeLeft(timeLeft) + '</span>' +
+        '</div>' +
+        '<p class="ac-description">' + escapeHtml(challenge.description || 'Sin descripción') + '</p>' +
+        '<div class="ac-stats">' +
+            '<span class="ac-stat"><i class="ph-image"></i> <span class="ac-stat-value">' + (challenge.photo_count || 0) + '</span> fotos</span>' +
+            '<span class="ac-stat"><i class="ph-user"></i> por <span class="ac-stat-value">' + escapeHtml(challenge.creator_name || 'Sistema') + '</span></span>' +
+        '</div>';
+}
+
+function renderQueueList(queued) {
+    if (!queued || queued.length === 0) {
+        queueList.innerHTML = '<div class="queue-empty">No hay retos en cola</div>';
+        return;
+    }
+
+    queueList.innerHTML = '';
+    queued.forEach(function(ch, idx) {
+        var durationText = formatDuration(ch.duration_hours);
+        var item = document.createElement('div');
+        item.className = 'queue-item';
+        item.innerHTML =
+            '<span class="queue-position">' + (idx + 1) + '</span>' +
+            '<div class="queue-info">' +
+                '<span class="queue-title">' + escapeHtml(ch.title) + '</span>' +
+                '<span class="queue-meta">por ' + escapeHtml(ch.creator_name || 'Usuario') + '</span>' +
+            '</div>' +
+            '<span class="queue-duration">' + durationText + '</span>';
+        queueList.appendChild(item);
+    });
+}
+
+// ===============================
+// DURATION PICKER
+// ===============================
+function initDurationPicker() {
+    if (!durationOptions) return;
+    var btns = durationOptions.querySelectorAll('.cc-duration-btn');
+    btns.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            btns.forEach(function(b) { b.classList.remove('active'); });
+            btn.classList.add('active');
+            selectedDuration = parseInt(btn.dataset.hours) || 72;
+        });
+    });
+}
+
+function resetChallengeForm() {
+    if (newChallengeTitle) newChallengeTitle.value = '';
+    if (newChallengeDesc) newChallengeDesc.value = '';
+    selectedDuration = 72;
+    if (durationOptions) {
+        var btns = durationOptions.querySelectorAll('.cc-duration-btn');
+        btns.forEach(function(b) {
+            b.classList.toggle('active', parseInt(b.dataset.hours) === 72);
+        });
+    }
+}
+
+function submitNewChallenge() {
+    var title = newChallengeTitle.value.trim();
+    if (!title) {
+        newChallengeTitle.focus();
+        return;
+    }
+    if (!currentBoardId) return;
+
+    createChallengeBtn.disabled = true;
+    createChallengeBtn.innerHTML = '<div class="spinner" style="width:20px;height:20px;border-width:2px;"></div> Creando...';
+
+    var fd = new FormData();
+    fd.append('board_id', currentBoardId);
+    fd.append('title', title);
+    fd.append('description', newChallengeDesc.value.trim());
+    fd.append('duration_hours', selectedDuration);
+
+    fetch('/app/api/create-challenge.php', { method: 'POST', body: fd })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            createChallengeBtn.disabled = false;
+            createChallengeBtn.innerHTML = '<i class="ph-paper-plane-tilt"></i> Proponer reto';
+
+            if (data.success) {
+                resetChallengeForm();
+                createChallengeForm.style.display = 'none';
+                toggleCreateChallenge.style.display = '';
+                loadChallenges();
+                loadActiveChallenge(); // Update header
+                if (data.status === 'active') {
+                    alert('¡Tu reto está activo ahora!');
+                } else {
+                    alert('Reto agregado a la cola (posición ' + data.queue_position + ')');
+                }
+            } else {
+                alert(data.message || 'Error al crear el reto');
+            }
+        })
+        .catch(function() {
+            createChallengeBtn.disabled = false;
+            createChallengeBtn.innerHTML = '<i class="ph-paper-plane-tilt"></i> Proponer reto';
+            alert('Error de conexión');
+        });
+}
+
+// ===============================
+// ACTIVE CHALLENGE (Header)
+// ===============================
+function loadActiveChallenge() {
+    if (!currentBoardId) return;
+
+    fetch('/app/api/get-active-challenge.php?board_id=' + currentBoardId)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (!data.success) return;
+
+            if (data.challenge) {
+                updateHeaderChallenge(data.challenge);
+                startCountdown(data.challenge.ends_at);
+            } else {
+                // No active challenge
+                if (challengeTitle) challengeTitle.textContent = 'Sin reto activo';
+                if (challengeDescription) challengeDescription.textContent = 'Abre Retos para proponer uno nuevo';
+                if (challengeCountdown) challengeCountdown.innerHTML = '<span class="time">--</span>d<span class="divider">:</span><span class="time">--</span>h<span class="divider">:</span><span class="time">--</span>m';
+            }
+        })
+        .catch(function() {});
+}
+
+function updateHeaderChallenge(challenge) {
+    if (challengeTitle) challengeTitle.textContent = challenge.title;
+    if (challengeDescription) challengeDescription.textContent = challenge.description || '';
+}
+
+function startCountdown(endsAt) {
+    if (countdownInterval) clearInterval(countdownInterval);
+
+    function updateCountdown() {
+        var timeLeft = getTimeRemaining(endsAt);
+
+        if (timeLeft.total <= 0) {
+            clearInterval(countdownInterval);
+            // Reload to get next challenge
+            setTimeout(function() {
+                loadActiveChallenge();
+                loadPhotos();
+            }, 1000);
+            return;
+        }
+
+        if (challengeCountdown) {
+            challengeCountdown.innerHTML =
+                '<span class="time">' + pad(timeLeft.days) + '</span>d' +
+                '<span class="divider">:</span>' +
+                '<span class="time">' + pad(timeLeft.hours) + '</span>h' +
+                '<span class="divider">:</span>' +
+                '<span class="time">' + pad(timeLeft.minutes) + '</span>m';
+        }
+
+        // Also update the panel timer if open
+        var acTimer = document.getElementById('acTimer');
+        if (acTimer) {
+            acTimer.textContent = formatTimeLeft(timeLeft);
+        }
+    }
+
+    updateCountdown();
+    countdownInterval = setInterval(updateCountdown, 60000); // Update every minute
+}
+
+function getTimeRemaining(endsAt) {
+    if (!endsAt) return { total: 0, days: 0, hours: 0, minutes: 0 };
+
+    var endTime = new Date(endsAt).getTime();
+    var now = Date.now();
+    var diff = endTime - now;
+
+    if (diff <= 0) return { total: 0, days: 0, hours: 0, minutes: 0 };
+
+    var days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    var hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    var minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+    return { total: diff, days: days, hours: hours, minutes: minutes };
+}
+
+function formatTimeLeft(t) {
+    if (t.total <= 0) return 'Terminado';
+    if (t.days > 0) return t.days + 'd ' + t.hours + 'h';
+    if (t.hours > 0) return t.hours + 'h ' + t.minutes + 'm';
+    return t.minutes + 'm';
+}
+
+function formatDuration(hours) {
+    if (!hours) return '3 días';
+    if (hours <= 24) return '1 día';
+    if (hours <= 72) return '3 días';
+    if (hours <= 168) return '1 semana';
+    return Math.floor(hours / 24) + ' días';
+}
+
+function pad(n) {
+    return n < 10 ? '0' + n : n;
 }
 
 // ===============================
