@@ -1217,3 +1217,104 @@ if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/app/sw.js');
     });
 }
+
+// ===============================
+// PWA INSTALL PROMPT
+// ===============================
+var deferredPrompt = null;
+var installBanner = document.getElementById('installBanner');
+var installBtn = document.getElementById('installBtn');
+var dismissInstall = document.getElementById('dismissInstall');
+var iosInstructions = document.getElementById('iosInstructions');
+
+// Check if already installed or dismissed
+function isAppInstalled() {
+    return window.matchMedia('(display-mode: standalone)').matches ||
+           window.navigator.standalone === true;
+}
+
+function wasInstallDismissed() {
+    var dismissed = localStorage.getItem('pwa_install_dismissed');
+    if (!dismissed) return false;
+
+    // Show again after 7 days
+    var dismissedAt = parseInt(dismissed, 10);
+    var sevenDays = 7 * 24 * 60 * 60 * 1000;
+    return Date.now() - dismissedAt < sevenDays;
+}
+
+function isIOS() {
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+}
+
+function showInstallBanner() {
+    if (isAppInstalled() || wasInstallDismissed()) return;
+
+    if (installBanner) {
+        installBanner.style.display = 'block';
+
+        // If iOS, show special instructions
+        if (isIOS()) {
+            installBanner.classList.add('ios-mode');
+            if (iosInstructions) iosInstructions.style.display = 'block';
+        } else if (installBtn) {
+            // Add pulse effect to install button
+            setTimeout(function() {
+                installBtn.classList.add('pulsing');
+            }, 2000);
+        }
+    }
+}
+
+function hideInstallBanner() {
+    if (installBanner) {
+        installBanner.classList.add('hiding');
+        setTimeout(function() {
+            installBanner.style.display = 'none';
+            installBanner.classList.remove('hiding');
+        }, 400);
+    }
+}
+
+// Listen for beforeinstallprompt (Android/Chrome)
+window.addEventListener('beforeinstallprompt', function(e) {
+    e.preventDefault();
+    deferredPrompt = e;
+
+    // Show banner after a delay to not interrupt initial experience
+    setTimeout(showInstallBanner, 3000);
+});
+
+// Install button click
+if (installBtn) {
+    installBtn.addEventListener('click', function() {
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then(function(choice) {
+                if (choice.outcome === 'accepted') {
+                    hideInstallBanner();
+                }
+                deferredPrompt = null;
+            });
+        }
+    });
+}
+
+// Dismiss button
+if (dismissInstall) {
+    dismissInstall.addEventListener('click', function() {
+        localStorage.setItem('pwa_install_dismissed', Date.now().toString());
+        hideInstallBanner();
+    });
+}
+
+// For iOS - show banner after delay if not installed
+if (isIOS() && !isAppInstalled() && !wasInstallDismissed()) {
+    setTimeout(showInstallBanner, 5000);
+}
+
+// Hide when app is installed
+window.addEventListener('appinstalled', function() {
+    hideInstallBanner();
+    deferredPrompt = null;
+});

@@ -202,6 +202,40 @@
 
 </div>
 
+<!-- PWA INSTALL BANNER -->
+<div id="installBanner" class="install-banner" style="display:none">
+    <div class="install-banner-content">
+        <div class="install-icon-wrap">
+            <img src="assets/brand/icon-192.png" alt="Gatooso" class="install-app-icon">
+            <span class="install-badge">APP</span>
+        </div>
+        <div class="install-text">
+            <strong>Instala Gatooso</strong>
+            <span>Accede más rápido desde tu pantalla de inicio</span>
+        </div>
+        <button id="installBtn" class="install-btn">
+            <i class="ph-download-simple"></i>
+            Instalar
+        </button>
+        <button id="dismissInstall" class="install-dismiss" aria-label="Cerrar">
+            <i class="ph-x"></i>
+        </button>
+    </div>
+
+    <!-- iOS Instructions (shown when on iOS) -->
+    <div id="iosInstructions" class="ios-instructions" style="display:none">
+        <div class="ios-step">
+            <span class="ios-step-num">1</span>
+            <span>Toca el botón <i class="ph-export"></i> de compartir</span>
+        </div>
+        <div class="ios-step">
+            <span class="ios-step-num">2</span>
+            <span>Selecciona <strong>"Añadir a pantalla de inicio"</strong></span>
+        </div>
+        <div class="ios-arrow"></div>
+    </div>
+</div>
+
 <!-- UPLOAD MODAL -->
 <div id="addModal" class="modal">
     <div class="modal-content">
