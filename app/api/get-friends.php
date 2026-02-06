@@ -76,7 +76,7 @@ try {
                 COUNT(DISTINCT i.id) as photo_count,
                 COALESCE(AVG(r.rating), 0) as avg_rating
             FROM images i
-            LEFT JOIN ratings r ON r.image_id = i.id
+            LEFT JOIN image_ratings r ON r.image_id = i.id
             WHERE i.user_id = ?
         ");
         $stmt->execute([$friendId]);
