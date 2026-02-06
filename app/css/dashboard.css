@@ -204,7 +204,7 @@ body {
     gap: 6px;
     padding: 6px;
     padding-top: 220px;
-    padding-bottom: 110px;
+    padding-bottom: 120px;
 }
 
 .grid-item {
@@ -298,17 +298,20 @@ body {
 
 
 /* ===============================
-   BOTTOM NAV
+   BOTTOM NAV — Glassmorphism
    =============================== */
 .bottom-nav {
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
-    height: 72px;
-    background: rgba(255,255,255,0.85);
-    backdrop-filter: blur(12px);
-    border-top: 1px solid rgba(0,0,0,0.05);
+    height: 80px;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+    background: rgba(255, 255, 255, 0.42);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-top: 1px solid rgba(255, 255, 255, 0.55);
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.06);
     display: flex;
     align-items: center;
     justify-content: space-around;
@@ -318,38 +321,59 @@ body {
 .nav-btn {
     background: none;
     border: none;
-    font-size: 22px;
-    opacity: 0.8;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 12px;
     -webkit-tap-highlight-color: transparent;
+    cursor: pointer;
+    transition: opacity 0.15s ease;
 }
-.nav-btn i { font-size: 24px; color: #6E6E73; opacity: 0.85; }
-.nav-btn.active i { opacity: 1; color: #221723; }
+.nav-btn:active { opacity: 0.7; }
+
+.nav-btn i {
+    font-size: 22px;
+    color: #6E6E73;
+    transition: color 0.15s ease;
+}
+.nav-btn .nav-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: #6E6E73;
+    transition: color 0.15s ease;
+}
+.nav-btn.active i,
+.nav-btn.active .nav-label {
+    color: #221723;
+}
 
 
 /* FAB */
 .fab {
-    width: 64px;
-    height: 64px;
+    width: 56px;
+    height: 56px;
     background: #221723;
     border-radius: 50%;
     border: none;
     display: flex;
     align-items: center;
     justify-content: center;
-    transform: translateY(-28%);
+    transform: translateY(-20%);
     box-shadow:
-        0 10px 28px rgba(34,23,35,0.35),
-        0 0 0 6px rgba(34,23,35,0.08);
+        0 8px 24px rgba(34,23,35,0.35),
+        0 0 0 5px rgba(255,255,255,0.5);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
     -webkit-tap-highlight-color: transparent;
+    cursor: pointer;
 }
 .fab:active {
-    transform: translateY(-28%) scale(0.96);
+    transform: translateY(-20%) scale(0.94);
     box-shadow:
-        0 6px 18px rgba(34,23,35,0.25),
-        0 0 0 4px rgba(34,23,35,0.12);
+        0 4px 16px rgba(34,23,35,0.25),
+        0 0 0 4px rgba(255,255,255,0.4);
 }
-.fab i { font-size: 30px; color: white; }
+.fab i { font-size: 26px; color: white; }
 
 
 /* ===============================
@@ -1038,9 +1062,12 @@ body {
     gap: 8px;
     padding-top: 10px;
     border-top: 1px solid rgba(255,255,255,0.06);
+    width: 100%;
+    box-sizing: border-box;
 }
 .vc-input-wrap input {
     flex: 1;
+    min-width: 0;
     padding: 10px 14px;
     border-radius: 999px;
     border: 1px solid rgba(255,255,255,0.1);
@@ -1050,18 +1077,19 @@ body {
     font-family: inherit;
     outline: none;
     transition: border-color 0.2s;
+    box-sizing: border-box;
 }
 .vc-input-wrap input:focus { border-color: rgba(255,255,255,0.25); }
 .vc-input-wrap input::placeholder { color: rgba(255,255,255,0.25); }
 
 .vc-input-wrap button {
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
     border: none;
     background: #FFFFFF;
     color: #221723;
-    font-size: 16px;
+    font-size: 14px;
     display: flex;
     align-items: center;
     justify-content: center;
