@@ -23,16 +23,35 @@ try {
     // Column might not exist yet, use default
 }
 
-$stmt = $pdo->prepare("
-    SELECT i.image_url, i.rating, i.caption, u.name AS user_name
-    FROM images i
-    JOIN challenges c ON c.id = i.challenge_id
-    JOIN users u ON u.id = i.user_id
-    WHERE c.board_id = ?
-    ORDER BY i.created_at DESC
-");
-$stmt->execute([$board_id]);
-$photos = $stmt->fetchAll();
+// Try with comment_count (table may not exist yet)
+try {
+    $stmt = $pdo->prepare("
+        SELECT i.id, i.image_url, i.rating, i.caption, i.user_id, u.name AS user_name,
+               (SELECT COUNT(*) FROM image_comments WHERE image_id = i.id) AS comment_count
+        FROM images i
+        JOIN challenges c ON c.id = i.challenge_id
+        JOIN users u ON u.id = i.user_id
+        WHERE c.board_id = ?
+        ORDER BY i.created_at DESC
+    ");
+    $stmt->execute([$board_id]);
+    $photos = $stmt->fetchAll();
+} catch (PDOException $e) {
+    // Fallback without comment_count
+    $stmt = $pdo->prepare("
+        SELECT i.id, i.image_url, i.rating, i.caption, i.user_id, u.name AS user_name
+        FROM images i
+        JOIN challenges c ON c.id = i.challenge_id
+        JOIN users u ON u.id = i.user_id
+        WHERE c.board_id = ?
+        ORDER BY i.created_at DESC
+    ");
+    $stmt->execute([$board_id]);
+    $photos = $stmt->fetchAll();
+    // Add default comment_count
+    foreach ($photos as &$p) { $p['comment_count'] = 0; }
+    unset($p);
+}
 
 echo json_encode([
     'rating_icon' => $rating_icon,

@@ -102,7 +102,20 @@ CREATE TABLE IF NOT EXISTS challenge_library (
 ) ENGINE=InnoDB;
 
 -- --------------------------------------------
--- 8. ACTIVITY_LOG
+-- 8. IMAGE_COMMENTS
+-- --------------------------------------------
+CREATE TABLE IF NOT EXISTS image_comments (
+    id          INT AUTO_INCREMENT PRIMARY KEY,
+    image_id    INT NOT NULL,
+    user_id     INT NOT NULL,
+    comment     TEXT NOT NULL,
+    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (image_id) REFERENCES images(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id)  REFERENCES users(id)  ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- --------------------------------------------
+-- 9. ACTIVITY_LOG
 -- --------------------------------------------
 CREATE TABLE IF NOT EXISTS activity_log (
     id            INT AUTO_INCREMENT PRIMARY KEY,
@@ -124,3 +137,4 @@ CREATE INDEX idx_image_ratings_image ON image_ratings(image_id);
 CREATE INDEX idx_activity_user ON activity_log(user_id);
 CREATE INDEX idx_activity_board ON activity_log(board_id);
 CREATE INDEX idx_challenges_board ON challenges(board_id);
+CREATE INDEX idx_image_comments_image ON image_comments(image_id);

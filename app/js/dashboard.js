@@ -7,6 +7,9 @@ var selectedFile = null;
 var currentBoardId = null;
 var currentRatingIcon = '⭐';
 var selectedIcon = '⭐';
+var currentViewImage = null;
+var viewerOverlay = null;
+var isRatingInProgress = false;
 
 var ICON_OPTIONS = [
     '⭐','🔥','🍆','💃','🤙','😏',
@@ -18,6 +21,7 @@ var ICON_OPTIONS = [
 // ELEMENTS
 // ===============================
 var storiesBar = document.getElementById('storiesBar');
+var appLogo = document.getElementById('appLogo');
 var fab = document.querySelector('.fab');
 var modal = document.getElementById('addModal');
 var bottomNavButtons = document.querySelectorAll('.nav-btn');
@@ -71,11 +75,22 @@ function loadBoard() {
 }
 
 // ===============================
-// SCROLL — Hide/show header
+// SCROLL — Hide/show header + logo
 // ===============================
 window.addEventListener('scroll', function() {
     var sy = window.scrollY;
     if (!storiesBar) return;
+
+    // Logo fades immediately on any scroll
+    if (appLogo) {
+        if (sy > 10) {
+            appLogo.classList.add('logo-hidden');
+        } else {
+            appLogo.classList.remove('logo-hidden');
+        }
+    }
+
+    // Header hides after threshold
     if (sy > lastScrollY && sy > SCROLL_THRESHOLD) {
         storiesBar.style.transform = 'translateY(-110%)';
         storiesBar.style.opacity = '0';
@@ -105,7 +120,6 @@ function openBoardsPanel() {
     loadBoardsList();
     boardsPanel.style.display = '';
     document.body.style.overflow = 'hidden';
-    // Reset create form
     if (createBoardForm) createBoardForm.style.display = 'none';
     if (toggleCreateBoard) toggleCreateBoard.style.display = '';
 }
@@ -162,12 +176,9 @@ function loadBoardsList() {
                         '<button class="board-card-invite">Invitar</button>' +
                     '</div>';
 
-                // Enter board
                 card.querySelector('.board-card-enter').addEventListener('click', function() {
                     selectBoard(parseInt(board.id));
                 });
-
-                // Invite
                 card.querySelector('.board-card-invite').addEventListener('click', function(e) {
                     e.stopPropagation();
                     shareInviteLink(parseInt(board.id));
@@ -328,7 +339,6 @@ function resetUploadState() {
     if (uploadStep3) uploadStep3.style.display = 'none';
 }
 
-// File selected
 if (photoInput) {
     photoInput.addEventListener('change', function(e) {
         var file = e.target.files[0];
@@ -350,7 +360,6 @@ if (cancelUpload) {
     });
 }
 
-// Confirm upload
 if (confirmUpload) {
     confirmUpload.addEventListener('click', function() {
         if (!selectedFile || !currentBoardId) return;
@@ -383,7 +392,7 @@ bottomNavButtons.forEach(function(button) {
 });
 
 // ===============================
-// LOAD PHOTOS
+// LOAD PHOTOS — Enhanced cards
 // ===============================
 function loadPhotos() {
     if (!photoGrid || !currentBoardId) return;
@@ -396,7 +405,6 @@ function loadPhotos() {
             var icon = '⭐';
             var photos = data;
 
-            // New API format returns { rating_icon, photos }
             if (data && data.photos) {
                 icon = data.rating_icon || '⭐';
                 photos = data.photos;
@@ -411,12 +419,34 @@ function loadPhotos() {
             photos.forEach(function(photo) {
                 var item = document.createElement('div');
                 item.className = 'grid-item';
+
+                var commentCount = parseInt(photo.comment_count) || 0;
+                var commentBadge = commentCount > 0
+                    ? '<div class="grid-item-comments"><i class="ph ph-chat-circle"></i>' + commentCount + '</div>'
+                    : '';
+
                 item.innerHTML =
                     '<img src="' + escapeHtml(photo.image_url) + '" alt="Foto">' +
+                    '<div class="grid-item-overlay"></div>' +
+                    '<div class="grid-item-avatar">' + getInitials(photo.user_name) + '</div>' +
                     '<div class="rating-chip">' +
-                    '<span class="star">' + icon + '</span>' +
-                    '<span class="rating-value">' + photo.rating + '</span>' +
-                    '</div>';
+                        '<span class="star">' + icon + '</span>' +
+                        '<span class="rating-value">' + (parseFloat(photo.rating) || 0).toFixed(1) + '</span>' +
+                    '</div>' +
+                    commentBadge;
+
+                // Click to open viewer
+                item.addEventListener('click', function() {
+                    openImageViewer({
+                        id: photo.id,
+                        image_url: photo.image_url,
+                        caption: photo.caption,
+                        rating: photo.rating,
+                        user_name: photo.user_name,
+                        user_id: photo.user_id
+                    });
+                });
+
                 photoGrid.appendChild(item);
             });
         })
@@ -450,6 +480,365 @@ function loadBoardMembers() {
                     el.title = member.name;
                     membersBar.appendChild(el);
                 });
+            }
+        })
+        .catch(function() {});
+}
+
+// ===============================
+// IMAGE VIEWER — GAMIFIED
+// ===============================
+function openImageViewer(photoData) {
+    currentViewImage = photoData;
+
+    if (!viewerOverlay) {
+        buildViewerOverlay();
+    }
+
+    // Set content
+    document.getElementById('viewerImage').src = photoData.image_url;
+    document.getElementById('viewerUserName').textContent = photoData.user_name || 'Usuario';
+    document.getElementById('viewerAvatar').textContent = getInitials(photoData.user_name);
+    document.getElementById('viewerCaption').textContent = photoData.caption || '';
+
+    // Update label with current board icon
+    document.getElementById('vrLabel').textContent = '¿Qué tan ' + currentRatingIcon + ' es?';
+
+    // Build rating buttons with current icon
+    buildRatingButtons();
+
+    // Reset UI
+    resetViewerRatingUI();
+    document.getElementById('commentsList').innerHTML = '<div class="vc-empty">Cargando...</div>';
+    document.getElementById('vcCount').textContent = '0';
+
+    // Show viewer
+    viewerOverlay.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    requestAnimationFrame(function() {
+        viewerOverlay.classList.add('viewer-active');
+    });
+
+    // Load details
+    loadImageDetail(photoData.id);
+}
+
+function closeImageViewer() {
+    if (!viewerOverlay) return;
+    viewerOverlay.classList.remove('viewer-active');
+    setTimeout(function() {
+        viewerOverlay.style.display = 'none';
+        document.body.style.overflow = '';
+    }, 300);
+}
+
+function buildViewerOverlay() {
+    viewerOverlay = document.createElement('div');
+    viewerOverlay.id = 'imageViewer';
+    viewerOverlay.className = 'viewer-overlay';
+
+    viewerOverlay.innerHTML =
+        '<div class="viewer-container">' +
+            '<button class="viewer-close">&times;</button>' +
+
+            '<div class="viewer-image-wrap">' +
+                '<img id="viewerImage" src="" alt="">' +
+            '</div>' +
+
+            '<div class="viewer-info">' +
+                '<span class="viewer-avatar" id="viewerAvatar"></span>' +
+                '<div class="viewer-user-info">' +
+                    '<span class="viewer-user-name" id="viewerUserName"></span>' +
+                    '<span class="viewer-caption" id="viewerCaption"></span>' +
+                '</div>' +
+            '</div>' +
+
+            '<div class="viewer-rating">' +
+                '<div class="vr-label" id="vrLabel">¿Qué tan ⭐ es?</div>' +
+                '<div class="vr-buttons" id="ratingButtons"></div>' +
+                '<div class="vr-avg" id="avgRatingDisplay">' +
+                    '<span class="vr-avg-icon" id="avgIcon">⭐</span>' +
+                    '<span class="vr-avg-value" id="avgValue">0.0</span>' +
+                    '<span class="vr-avg-count" id="avgCount">(0 votos)</span>' +
+                '</div>' +
+            '</div>' +
+
+            '<div class="viewer-comments">' +
+                '<div class="vc-header">' +
+                    '<span class="vc-title">Comentarios</span>' +
+                    '<span class="vc-count" id="vcCount">0</span>' +
+                '</div>' +
+                '<div class="vc-list" id="commentsList"></div>' +
+                '<div class="vc-input-wrap">' +
+                    '<input type="text" id="commentInput" placeholder="Escribe algo...">' +
+                    '<button id="sendComment"><i class="ph ph-paper-plane-tilt"></i></button>' +
+                '</div>' +
+            '</div>' +
+
+        '</div>';
+
+    document.body.appendChild(viewerOverlay);
+
+    // Close handler
+    viewerOverlay.querySelector('.viewer-close').addEventListener('click', closeImageViewer);
+
+    // Comment submit
+    document.getElementById('sendComment').addEventListener('click', submitComment);
+    document.getElementById('commentInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') submitComment();
+    });
+}
+
+function buildRatingButtons() {
+    var container = document.getElementById('ratingButtons');
+    if (!container) return;
+    container.innerHTML = '';
+
+    for (var i = 1; i <= 5; i++) {
+        var btn = document.createElement('button');
+        btn.className = 'vr-btn';
+        btn.textContent = currentRatingIcon;
+        btn.dataset.rating = i;
+        btn.addEventListener('click', handleRatingClick);
+        container.appendChild(btn);
+    }
+}
+
+function resetViewerRatingUI() {
+    var btns = document.querySelectorAll('.vr-btn');
+    btns.forEach(function(b) {
+        b.classList.remove('vr-btn-filled', 'vr-btn-active', 'vr-btn-pop', 'vr-btn-mega', 'vr-btn-wave');
+    });
+    var avgDisplay = document.getElementById('avgRatingDisplay');
+    if (avgDisplay) avgDisplay.classList.remove('vr-avg-visible');
+    isRatingInProgress = false;
+}
+
+function loadImageDetail(imageId) {
+    fetch('/app/api/get-image-detail.php?image_id=' + imageId)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (!data.success) return;
+
+            // If user already rated, show their rating
+            if (data.my_rating > 0) {
+                applyRatingUI(data.my_rating, false);
+            }
+
+            // Show average
+            showAverageRating(data.image.rating, data.rating_count);
+
+            // Load comments
+            renderComments(data.comments);
+        })
+        .catch(function() {});
+}
+
+// ===============================
+// GAMIFIED RATING INTERACTION
+// ===============================
+function handleRatingClick(e) {
+    if (isRatingInProgress) return;
+    isRatingInProgress = true;
+
+    var btn = e.currentTarget;
+    var rating = parseInt(btn.dataset.rating);
+
+    // Visual feedback
+    applyRatingUI(rating, true);
+
+    // Haptic feedback
+    triggerHaptic(rating);
+
+    // Particles!
+    var rect = btn.getBoundingClientRect();
+    var cx = rect.left + rect.width / 2;
+    var cy = rect.top + rect.height / 2;
+    spawnParticles(cx, cy, currentRatingIcon, rating * 6);
+
+    // Epic effects for rating 5
+    if (rating === 5) {
+        viewerOverlay.classList.add('viewer-shake', 'viewer-flash');
+        setTimeout(function() {
+            viewerOverlay.classList.remove('viewer-shake', 'viewer-flash');
+        }, 600);
+        // Extra particle burst
+        spawnParticles(cx, cy - 50, currentRatingIcon, 20, true);
+    }
+
+    // Submit rating to API
+    var fd = new FormData();
+    fd.append('image_id', currentViewImage.id);
+    fd.append('rating', rating);
+
+    fetch('/app/api/rate-image.php', { method: 'POST', body: fd })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success) {
+                setTimeout(function() {
+                    showAverageRating(data.new_avg, data.rating_count);
+                    isRatingInProgress = false;
+                }, 400);
+            } else {
+                isRatingInProgress = false;
+            }
+        })
+        .catch(function() {
+            isRatingInProgress = false;
+        });
+}
+
+function applyRatingUI(rating, animate) {
+    var btns = document.querySelectorAll('.vr-btn');
+    btns.forEach(function(b, idx) {
+        var level = idx + 1;
+        b.classList.remove('vr-btn-filled', 'vr-btn-active', 'vr-btn-pop', 'vr-btn-mega', 'vr-btn-wave');
+
+        if (level <= rating) {
+            b.classList.add('vr-btn-filled');
+            if (animate && level < rating) {
+                b.style.animationDelay = (level * 0.05) + 's';
+                b.classList.add('vr-btn-wave');
+            }
+        }
+        if (level === rating) {
+            b.classList.add('vr-btn-active');
+            if (animate) {
+                b.classList.add(rating === 5 ? 'vr-btn-mega' : 'vr-btn-pop');
+            }
+        }
+    });
+}
+
+function showAverageRating(avg, count) {
+    var avgDisplay = document.getElementById('avgRatingDisplay');
+    var avgIcon = document.getElementById('avgIcon');
+    var avgValue = document.getElementById('avgValue');
+    var avgCount = document.getElementById('avgCount');
+
+    if (avgIcon) avgIcon.textContent = currentRatingIcon;
+    if (avgValue) avgValue.textContent = (parseFloat(avg) || 0).toFixed(1);
+    if (avgCount) avgCount.textContent = '(' + (count || 0) + ' voto' + (count !== 1 ? 's' : '') + ')';
+
+    if (avgDisplay) {
+        avgDisplay.classList.add('vr-avg-visible');
+    }
+}
+
+function triggerHaptic(rating) {
+    if (!navigator.vibrate) return;
+    var patterns = {
+        1: [30],
+        2: [30, 20, 30],
+        3: [40, 20, 40, 20, 40],
+        4: [50, 25, 50, 25, 50, 25, 50],
+        5: [80, 40, 80, 40, 80, 40, 80, 40, 100]
+    };
+    navigator.vibrate(patterns[rating] || [30]);
+}
+
+// ===============================
+// PARTICLE SYSTEM
+// ===============================
+function spawnParticles(x, y, emoji, count, big) {
+    for (var i = 0; i < count; i++) {
+        var particle = document.createElement('div');
+        particle.className = 'emoji-particle' + (big ? ' emoji-particle-big' : '');
+        particle.textContent = emoji;
+        particle.style.left = x + 'px';
+        particle.style.top = y + 'px';
+
+        var angle = Math.random() * Math.PI * 2;
+        var distance = 60 + Math.random() * (big ? 180 : 120);
+        var tx = Math.cos(angle) * distance;
+        var ty = Math.sin(angle) * distance - (big ? 100 : 60);
+
+        particle.style.setProperty('--tx', tx + 'px');
+        particle.style.setProperty('--ty', ty + 'px');
+        particle.style.setProperty('--r', (Math.random() * 720 - 360) + 'deg');
+        particle.style.animationDelay = (Math.random() * 0.12) + 's';
+
+        document.body.appendChild(particle);
+
+        (function(p) {
+            setTimeout(function() {
+                if (p.parentNode) p.parentNode.removeChild(p);
+            }, big ? 1200 : 900);
+        })(particle);
+    }
+}
+
+// ===============================
+// COMMENTS
+// ===============================
+function renderComments(comments) {
+    var list = document.getElementById('commentsList');
+    var countEl = document.getElementById('vcCount');
+    if (!list) return;
+
+    if (!comments || comments.length === 0) {
+        list.innerHTML = '<div class="vc-empty">Sé el primero en comentar</div>';
+        if (countEl) countEl.textContent = '0';
+        return;
+    }
+
+    if (countEl) countEl.textContent = comments.length;
+    list.innerHTML = '';
+
+    comments.forEach(function(c) {
+        var bubble = document.createElement('div');
+        bubble.className = 'vc-bubble';
+        bubble.innerHTML =
+            '<span class="vc-bubble-avatar">' + getInitials(c.user_name) + '</span>' +
+            '<div class="vc-bubble-body">' +
+                '<span class="vc-bubble-name">' + escapeHtml(c.user_name) + '</span>' +
+                '<span class="vc-bubble-text">' + escapeHtml(c.comment) + '</span>' +
+            '</div>';
+        list.appendChild(bubble);
+    });
+
+    list.scrollTop = list.scrollHeight;
+}
+
+function submitComment() {
+    var input = document.getElementById('commentInput');
+    var comment = input.value.trim();
+    if (!comment || !currentViewImage) return;
+
+    input.value = '';
+
+    var fd = new FormData();
+    fd.append('image_id', currentViewImage.id);
+    fd.append('comment', comment);
+
+    fetch('/app/api/add-comment.php', { method: 'POST', body: fd })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success && data.comment) {
+                var list = document.getElementById('commentsList');
+                var countEl = document.getElementById('vcCount');
+
+                // Remove empty state if present
+                var empty = list.querySelector('.vc-empty');
+                if (empty) empty.remove();
+
+                // Add new comment
+                var bubble = document.createElement('div');
+                bubble.className = 'vc-bubble';
+                bubble.innerHTML =
+                    '<span class="vc-bubble-avatar">' + getInitials(data.comment.user_name) + '</span>' +
+                    '<div class="vc-bubble-body">' +
+                        '<span class="vc-bubble-name">' + escapeHtml(data.comment.user_name) + '</span>' +
+                        '<span class="vc-bubble-text">' + escapeHtml(data.comment.comment) + '</span>' +
+                    '</div>';
+                list.appendChild(bubble);
+                list.scrollTop = list.scrollHeight;
+
+                // Update count
+                if (countEl) {
+                    var cur = parseInt(countEl.textContent) || 0;
+                    countEl.textContent = cur + 1;
+                }
             }
         })
         .catch(function() {});
