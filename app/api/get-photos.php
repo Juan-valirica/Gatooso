@@ -23,10 +23,10 @@ try {
     // Column might not exist yet, use default
 }
 
-// Try with comment_count (table may not exist yet)
+// Try with comment_count and avatar_url
 try {
     $stmt = $pdo->prepare("
-        SELECT i.id, i.image_url, i.rating, i.caption, i.user_id, u.name AS user_name,
+        SELECT i.id, i.image_url, i.rating, i.caption, i.user_id, u.name AS user_name, u.avatar_url,
                (SELECT COUNT(*) FROM image_comments WHERE image_id = i.id) AS comment_count
         FROM images i
         JOIN challenges c ON c.id = i.challenge_id
@@ -37,7 +37,7 @@ try {
     $stmt->execute([$board_id]);
     $photos = $stmt->fetchAll();
 } catch (PDOException $e) {
-    // Fallback without comment_count
+    // Fallback without comment_count or avatar_url
     $stmt = $pdo->prepare("
         SELECT i.id, i.image_url, i.rating, i.caption, i.user_id, u.name AS user_name
         FROM images i
@@ -48,8 +48,8 @@ try {
     ");
     $stmt->execute([$board_id]);
     $photos = $stmt->fetchAll();
-    // Add default comment_count
-    foreach ($photos as &$p) { $p['comment_count'] = 0; }
+    // Add defaults
+    foreach ($photos as &$p) { $p['comment_count'] = 0; $p['avatar_url'] = null; }
     unset($p);
 }
 

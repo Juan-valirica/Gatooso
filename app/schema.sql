@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS users (
     name        VARCHAR(100) NOT NULL,
     email       VARCHAR(255) NOT NULL UNIQUE,
     password    VARCHAR(255) NOT NULL,
+    avatar_url  VARCHAR(500) NULL,
     rating      DECIMAL(3,2) DEFAULT 0.00,
     created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;

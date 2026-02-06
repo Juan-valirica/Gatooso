@@ -18,7 +18,7 @@ if (!$board_id) {
 
 // Get all members of that board
 $stmt = $pdo->prepare("
-    SELECT u.id, u.name, bu.role
+    SELECT u.id, u.name, u.avatar_url, bu.role
     FROM board_users bu
     JOIN users u ON u.id = bu.user_id
     WHERE bu.board_id = ?

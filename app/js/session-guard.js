@@ -9,7 +9,8 @@ fetch('/app/api/session.php', {
         // Store user info for personalization
         window.currentUser = {
             id: data.user_id,
-            name: data.user_name
+            name: data.user_name,
+            avatar_url: data.avatar_url
         };
         // Dispatch event so other scripts know user data is ready
         window.dispatchEvent(new CustomEvent('userReady', { detail: window.currentUser }));

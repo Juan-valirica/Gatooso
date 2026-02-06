@@ -84,6 +84,20 @@ var friendsCount = document.getElementById('friendsCount');
 var friendsSearch = document.getElementById('friendsSearch');
 var allFriends = [];
 
+// Profile
+var navProfile = document.getElementById('navProfile');
+var profilePanel = document.getElementById('profilePanel');
+var closeProfilePanelBtn = document.getElementById('closeProfilePanel');
+var profileAvatar = document.getElementById('profileAvatar');
+var avatarInput = document.getElementById('avatarInput');
+var profileName = document.getElementById('profileName');
+var profileEmail = document.getElementById('profileEmail');
+var profilePhotos = document.getElementById('profilePhotos');
+var profileRating = document.getElementById('profileRating');
+var profileBoards = document.getElementById('profileBoards');
+var saveProfileBtn = document.getElementById('saveProfileBtn');
+var logoutBtn = document.getElementById('logoutBtn');
+
 // ===============================
 // INIT
 // ===============================
@@ -99,6 +113,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initDurationPicker();
     initChallengesPanel();
     initFriendsPanel();
+    initProfilePanel();
 
     // Update welcome when user data loads (fixes race condition)
     window.addEventListener('userReady', function() {
@@ -184,10 +199,15 @@ function updateWelcomeSection() {
     var welcomeTagline = document.getElementById('welcomeTagline');
 
     var userName = window.currentUser ? window.currentUser.name : null;
+    var avatarUrl = window.currentUser ? window.currentUser.avatar_url : null;
     var firstName = getFirstName(userName);
 
     if (welcomeAvatar) {
-        welcomeAvatar.textContent = firstName.charAt(0).toUpperCase();
+        if (avatarUrl) {
+            welcomeAvatar.innerHTML = '<img src="' + avatarUrl + '" alt="Avatar" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
+        } else {
+            welcomeAvatar.innerHTML = firstName.charAt(0).toUpperCase();
+        }
     }
     if (welcomeGreeting) {
         welcomeGreeting.textContent = 'Hola,';
@@ -501,10 +521,14 @@ function loadPhotos() {
                     ? '<div class="grid-item-comments"><i class="ph ph-chat-circle"></i>' + commentCount + '</div>'
                     : '';
 
+                var avatarContent = photo.avatar_url
+                    ? '<img src="' + photo.avatar_url + '" alt="">'
+                    : getInitials(photo.user_name);
+
                 item.innerHTML =
                     '<img src="' + escapeHtml(photo.image_url) + '" alt="Foto">' +
                     '<div class="grid-item-overlay"></div>' +
-                    '<div class="grid-item-avatar">' + getInitials(photo.user_name) + '</div>' +
+                    '<div class="grid-item-avatar' + (photo.avatar_url ? ' has-image' : '') + '">' + avatarContent + '</div>' +
                     '<div class="rating-chip">' +
                         '<span class="star">' + icon + '</span>' +
                         '<span class="rating-value">' + (parseFloat(photo.rating) || 0).toFixed(1) + '</span>' +
@@ -519,7 +543,8 @@ function loadPhotos() {
                         caption: photo.caption,
                         rating: photo.rating,
                         user_name: photo.user_name,
-                        user_id: photo.user_id
+                        user_id: photo.user_id,
+                        avatar_url: photo.avatar_url
                     });
                 });
 
@@ -552,7 +577,11 @@ function loadBoardMembers() {
                 data.members.forEach(function(member) {
                     var el = document.createElement('div');
                     el.className = 'story';
-                    el.innerHTML = '<span class="member-avatar">' + getInitials(member.name) + '</span>';
+                    if (member.avatar_url) {
+                        el.innerHTML = '<span class="member-avatar has-image"><img src="' + member.avatar_url + '" alt=""></span>';
+                    } else {
+                        el.innerHTML = '<span class="member-avatar">' + getInitials(member.name) + '</span>';
+                    }
                     el.title = member.name;
                     membersBar.appendChild(el);
                 });
@@ -574,7 +603,16 @@ function openImageViewer(photoData) {
     // Set content
     document.getElementById('viewerImage').src = photoData.image_url;
     document.getElementById('viewerUserName').textContent = photoData.user_name || 'Usuario';
-    document.getElementById('viewerAvatar').textContent = getInitials(photoData.user_name);
+
+    var viewerAvatar = document.getElementById('viewerAvatar');
+    if (photoData.avatar_url) {
+        viewerAvatar.innerHTML = '<img src="' + photoData.avatar_url + '" alt="">';
+        viewerAvatar.classList.add('has-image');
+    } else {
+        viewerAvatar.innerHTML = getInitials(photoData.user_name);
+        viewerAvatar.classList.remove('has-image');
+    }
+
     document.getElementById('viewerCaption').textContent = photoData.caption || '';
 
     // Update label with current board icon
@@ -1397,6 +1435,214 @@ function filterFriends() {
     });
 
     renderFriendsList(filtered);
+}
+
+// ===============================
+// PROFILE PANEL
+// ===============================
+function initProfilePanel() {
+    if (navProfile) {
+        navProfile.addEventListener('click', function() {
+            setActiveNav(navProfile);
+            openProfilePanel();
+        });
+    }
+    if (closeProfilePanelBtn) {
+        closeProfilePanelBtn.addEventListener('click', closeProfilePanel);
+    }
+    if (avatarInput) {
+        avatarInput.addEventListener('change', handleAvatarUpload);
+    }
+    if (saveProfileBtn) {
+        saveProfileBtn.addEventListener('click', saveProfile);
+    }
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', logout);
+    }
+}
+
+function openProfilePanel() {
+    if (profilePanel) {
+        profilePanel.style.display = '';
+        document.body.style.overflow = 'hidden';
+        loadProfile();
+    }
+}
+
+function closeProfilePanel() {
+    if (profilePanel) {
+        profilePanel.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+}
+
+function loadProfile() {
+    fetch('/app/api/get-profile.php')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (!data.success) {
+                console.error('Error loading profile:', data.message);
+                return;
+            }
+
+            var user = data.user;
+            var stats = data.stats;
+
+            // Update form
+            if (profileName) profileName.value = user.name || '';
+            if (profileEmail) profileEmail.value = user.email || '';
+
+            // Update stats
+            if (profilePhotos) profilePhotos.textContent = stats.photos;
+            if (profileRating) profileRating.textContent = stats.rating > 0 ? stats.rating.toFixed(1) : '—';
+            if (profileBoards) profileBoards.textContent = stats.boards;
+
+            // Update avatar
+            updateProfileAvatar(user.avatar_url, user.name);
+
+            // Store for later use
+            window.currentUser = {
+                id: user.id,
+                name: user.name,
+                avatar_url: user.avatar_url
+            };
+        })
+        .catch(function(err) {
+            console.error('Error loading profile:', err);
+        });
+}
+
+function updateProfileAvatar(avatarUrl, name) {
+    if (!profileAvatar) return;
+
+    if (avatarUrl) {
+        profileAvatar.innerHTML = '<img src="' + avatarUrl + '" alt="Avatar">';
+    } else {
+        var initial = name ? name.charAt(0).toUpperCase() : '?';
+        profileAvatar.innerHTML = initial;
+    }
+}
+
+function handleAvatarUpload() {
+    var file = avatarInput.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.match(/^image\/(jpeg|png|webp)$/)) {
+        alert('Solo se permiten imágenes JPG, PNG o WebP');
+        return;
+    }
+
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+        alert('La imagen no puede pesar más de 5MB');
+        return;
+    }
+
+    // Show loading state
+    profileAvatar.classList.add('loading');
+
+    var formData = new FormData();
+    formData.append('avatar', file);
+
+    fetch('/app/api/upload-avatar.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        profileAvatar.classList.remove('loading');
+
+        if (data.success) {
+            // Update avatar display
+            updateProfileAvatar(data.avatar_url, window.currentUser ? window.currentUser.name : '');
+
+            // Update global user data
+            if (window.currentUser) {
+                window.currentUser.avatar_url = data.avatar_url;
+            }
+
+            // Success animation
+            profileAvatar.classList.add('success');
+            setTimeout(function() {
+                profileAvatar.classList.remove('success');
+            }, 300);
+
+            // Dispatch event so other parts can update
+            window.dispatchEvent(new CustomEvent('avatarUpdated', { detail: { avatar_url: data.avatar_url } }));
+        } else {
+            alert(data.message || 'Error al subir la foto');
+        }
+    })
+    .catch(function() {
+        profileAvatar.classList.remove('loading');
+        alert('Error de conexión');
+    });
+
+    // Clear input
+    avatarInput.value = '';
+}
+
+function saveProfile() {
+    var name = profileName ? profileName.value.trim() : '';
+    var email = profileEmail ? profileEmail.value.trim() : '';
+
+    if (!name || !email) {
+        alert('Nombre y correo son requeridos');
+        return;
+    }
+
+    saveProfileBtn.disabled = true;
+    saveProfileBtn.innerHTML = '<div class="spinner" style="width:18px;height:18px;border-width:2px;"></div> Guardando...';
+
+    var formData = new FormData();
+    formData.append('name', name);
+    formData.append('email', email);
+
+    fetch('/app/api/update-profile.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        saveProfileBtn.disabled = false;
+        saveProfileBtn.innerHTML = '<i class="ph-check"></i> Guardar cambios';
+
+        if (data.success) {
+            // Update global user data
+            if (window.currentUser) {
+                window.currentUser.name = name;
+            }
+
+            // Dispatch event
+            window.dispatchEvent(new CustomEvent('profileUpdated', { detail: { name: name, email: email } }));
+
+            // Show success feedback
+            saveProfileBtn.innerHTML = '<i class="ph-check-circle"></i> ¡Guardado!';
+            setTimeout(function() {
+                saveProfileBtn.innerHTML = '<i class="ph-check"></i> Guardar cambios';
+            }, 2000);
+        } else {
+            alert(data.message || 'Error al guardar');
+        }
+    })
+    .catch(function() {
+        saveProfileBtn.disabled = false;
+        saveProfileBtn.innerHTML = '<i class="ph-check"></i> Guardar cambios';
+        alert('Error de conexión');
+    });
+}
+
+function logout() {
+    if (!confirm('¿Seguro que quieres cerrar sesión?')) return;
+
+    fetch('/app/api/logout.php')
+        .then(function() {
+            window.location.href = '/app/auth/login.php';
+        })
+        .catch(function() {
+            window.location.href = '/app/auth/login.php';
+        });
 }
 
 function setActiveNav(btn) {

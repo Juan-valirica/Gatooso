@@ -177,6 +177,15 @@ body {
     align-items: center;
     justify-content: center;
     letter-spacing: 0.5px;
+    overflow: hidden;
+}
+.member-avatar.has-image {
+    background: transparent;
+}
+.member-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 /* INVITE BUTTON */
@@ -255,6 +264,15 @@ body {
     justify-content: center;
     box-shadow: 0 2px 6px rgba(0,0,0,0.2);
     z-index: 2;
+    overflow: hidden;
+}
+.grid-item-avatar.has-image {
+    background: transparent;
+}
+.grid-item-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 /* Comment count badge */
@@ -1195,6 +1213,15 @@ body {
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    overflow: hidden;
+}
+.viewer-avatar.has-image {
+    background: transparent;
+}
+.viewer-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 .viewer-user-info {
     flex: 1;
@@ -2004,4 +2031,288 @@ body {
     padding: 12px 0 6px;
     border-bottom: 1px solid #F1F1F3;
     margin-bottom: 8px;
+}
+
+
+/* ===============================
+   PROFILE PANEL
+   =============================== */
+.profile-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    background: #FAFAFA;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    padding-bottom: env(safe-area-inset-bottom, 24px);
+}
+
+.profile-header {
+    position: sticky;
+    top: 0;
+    background: #FAFAFA;
+    z-index: 2;
+    padding: 20px 16px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.profile-header h1 {
+    font-size: 26px;
+    font-weight: 800;
+    color: #221723;
+    margin: 0;
+}
+
+.profile-close-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: #F1F1F3;
+    font-size: 20px;
+    color: #6E6E73;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    -webkit-tap-highlight-color: transparent;
+}
+.profile-close-btn:hover {
+    background: #E5E5E7;
+    color: #221723;
+}
+
+/* Avatar Section */
+.profile-avatar-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 16px 32px;
+    background: linear-gradient(180deg, #FAFAFA 0%, #F5F3F6 100%);
+}
+
+.profile-avatar-wrap {
+    position: relative;
+    margin-bottom: 12px;
+}
+
+.profile-avatar {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #221723 0%, #4a3a4d 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+    font-weight: 700;
+    color: #FFFFFF;
+    text-transform: uppercase;
+    box-shadow:
+        0 8px 32px rgba(34, 23, 35, 0.25),
+        inset 0 2px 0 rgba(255, 255, 255, 0.1);
+    overflow: hidden;
+}
+
+.profile-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.profile-avatar-edit {
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #FFFFFF;
+    border: 3px solid #FAFAFA;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    transition: transform 0.2s, box-shadow 0.2s;
+    -webkit-tap-highlight-color: transparent;
+}
+.profile-avatar-edit:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+.profile-avatar-edit:active {
+    transform: scale(0.95);
+}
+.profile-avatar-edit i {
+    font-size: 16px;
+    color: #221723;
+}
+
+.profile-avatar-hint {
+    font-size: 13px;
+    color: #8E8E93;
+}
+
+/* Stats */
+.profile-stats {
+    display: flex;
+    justify-content: center;
+    gap: 32px;
+    padding: 0 16px 32px;
+}
+
+.profile-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.profile-stat-value {
+    font-size: 28px;
+    font-weight: 800;
+    color: #221723;
+}
+
+.profile-stat-label {
+    font-size: 13px;
+    color: #8E8E93;
+    font-weight: 500;
+}
+
+/* Form */
+.profile-form {
+    padding: 0 16px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.profile-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.profile-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #6E6E73;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.profile-input {
+    padding: 14px 16px;
+    border: 1px solid #E5E5E7;
+    border-radius: 12px;
+    font-size: 16px;
+    font-family: inherit;
+    background: #FFFFFF;
+    color: #221723;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+.profile-input:focus {
+    border-color: #221723;
+    box-shadow: 0 0 0 3px rgba(34, 23, 35, 0.1);
+}
+.profile-input::placeholder {
+    color: #C7C7CC;
+}
+
+.profile-save-btn {
+    margin-top: 8px;
+    padding: 16px 24px;
+    background: #221723;
+    color: #FFFFFF;
+    border: none;
+    border-radius: 14px;
+    font-size: 16px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+    -webkit-tap-highlight-color: transparent;
+}
+.profile-save-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(34, 23, 35, 0.3);
+}
+.profile-save-btn:active {
+    transform: scale(0.98);
+}
+.profile-save-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+.profile-save-btn i {
+    font-size: 18px;
+}
+
+/* Actions */
+.profile-actions {
+    margin-top: auto;
+    padding: 24px 16px;
+    border-top: 1px solid #E5E5E7;
+}
+
+.profile-logout-btn {
+    width: 100%;
+    padding: 14px 24px;
+    background: transparent;
+    color: #FF3B30;
+    border: 1px solid #FF3B30;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background 0.2s, color 0.2s;
+    -webkit-tap-highlight-color: transparent;
+}
+.profile-logout-btn:hover {
+    background: #FF3B30;
+    color: #FFFFFF;
+}
+.profile-logout-btn:active {
+    opacity: 0.8;
+}
+.profile-logout-btn i {
+    font-size: 18px;
+}
+
+/* Loading state for avatar */
+.profile-avatar.loading::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Avatar upload success animation */
+@keyframes avatarSuccess {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+.profile-avatar.success {
+    animation: avatarSuccess 0.3s ease;
 }
