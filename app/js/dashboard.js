@@ -99,6 +99,13 @@ document.addEventListener('DOMContentLoaded', function() {
     initDurationPicker();
     initChallengesPanel();
     initFriendsPanel();
+
+    // Update welcome when user data loads (fixes race condition)
+    window.addEventListener('userReady', function() {
+        if (boardsPanel && boardsPanel.style.display !== 'none') {
+            updateWelcomeSection();
+        }
+    });
 });
 
 function loadBoard() {

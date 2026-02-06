@@ -11,6 +11,8 @@ fetch('/app/api/session.php', {
             id: data.user_id,
             name: data.user_name
         };
+        // Dispatch event so other scripts know user data is ready
+        window.dispatchEvent(new CustomEvent('userReady', { detail: window.currentUser }));
     }
 })
 .catch(() => {
