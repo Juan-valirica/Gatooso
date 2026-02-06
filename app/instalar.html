@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Instala Gatooso</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#221723">
+
+    <!-- PWA -->
+    <link rel="manifest" href="/app/manifest.json">
+    <link rel="apple-touch-icon" href="/app/assets/brand/apple-touch-icon.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(145deg, #221723 0%, #3a2a3d 50%, #221723 100%);
+            min-height: 100vh;
+            color: #FFFFFF;
+            padding: 24px;
+            padding-bottom: env(safe-area-inset-bottom, 24px);
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .logo-wrap {
+            margin-bottom: 32px;
+            animation: logoFloat 3s ease-in-out infinite;
+        }
+
+        @keyframes logoFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        .app-icon {
+            width: 100px;
+            height: 100px;
+            border-radius: 24px;
+            box-shadow:
+                0 20px 60px rgba(0, 0, 0, 0.4),
+                0 0 0 1px rgba(255, 255, 255, 0.1);
+            margin-bottom: 16px;
+        }
+
+        .logo {
+            height: 28px;
+            opacity: 0.9;
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 800;
+            margin-bottom: 12px;
+            line-height: 1.2;
+        }
+
+        .subtitle {
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.7);
+            line-height: 1.5;
+            margin-bottom: 40px;
+        }
+
+        .install-card {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+
+        .install-card h2 {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .install-card h2 img {
+            width: 24px;
+            height: 24px;
+        }
+
+        .steps {
+            text-align: left;
+        }
+
+        .step {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            margin-bottom: 16px;
+        }
+
+        .step:last-child {
+            margin-bottom: 0;
+        }
+
+        .step-num {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .step-text {
+            font-size: 15px;
+            line-height: 1.5;
+            color: rgba(255, 255, 255, 0.9);
+            padding-top: 3px;
+        }
+
+        .step-text strong {
+            color: #FFFFFF;
+        }
+
+        .step-icon {
+            display: inline-flex;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 14px;
+            margin: 0 2px;
+            vertical-align: middle;
+        }
+
+        /* Android Install Button */
+        .install-btn {
+            display: none;
+            width: 100%;
+            padding: 16px 24px;
+            background: #FFFFFF;
+            color: #221723;
+            border: none;
+            border-radius: 14px;
+            font-size: 16px;
+            font-weight: 700;
+            font-family: inherit;
+            cursor: pointer;
+            margin-top: 16px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .install-btn:hover {
+            transform: scale(1.02);
+            box-shadow: 0 8px 24px rgba(255, 255, 255, 0.2);
+        }
+
+        .install-btn:active {
+            transform: scale(0.98);
+        }
+
+        .install-btn.show {
+            display: block;
+        }
+
+        /* Open App Button */
+        .open-app-btn {
+            display: inline-block;
+            margin-top: 32px;
+            padding: 14px 32px;
+            background: transparent;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            color: #FFFFFF;
+            font-size: 15px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .open-app-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .features {
+            margin-top: 40px;
+            padding-top: 32px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .features h3 {
+            font-size: 14px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.5);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .feature {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .feature-icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .feature-text {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        /* Hide sections based on platform */
+        .ios-only { display: none; }
+        .android-only { display: none; }
+
+        .is-ios .ios-only { display: block; }
+        .is-android .android-only { display: block; }
+        .is-desktop .ios-only, .is-desktop .android-only { display: block; }
+
+        /* Already installed message */
+        .installed-msg {
+            display: none;
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .installed-msg.show {
+            display: block;
+        }
+
+        .installed-msg h2 {
+            font-size: 18px;
+            margin-bottom: 8px;
+        }
+
+        .installed-msg p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <div class="logo-wrap">
+            <img src="/app/assets/brand/icon-192.png" alt="Gatooso" class="app-icon">
+            <br>
+            <img src="/app/assets/brand/logo.svg" alt="Gatooso" class="logo">
+        </div>
+
+        <h1>Instala Gatooso en tu celular</h1>
+        <p class="subtitle">
+            Accede más rápido, recibe notificaciones y disfruta la experiencia completa
+        </p>
+
+        <!-- Already Installed -->
+        <div class="installed-msg" id="installedMsg">
+            <h2>✅ Ya tienes Gatooso</h2>
+            <p>La app ya está instalada en tu dispositivo</p>
+        </div>
+
+        <!-- iOS Instructions -->
+        <div class="install-card ios-only">
+            <h2>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+                iPhone / iPad
+            </h2>
+            <div class="steps">
+                <div class="step">
+                    <span class="step-num">1</span>
+                    <span class="step-text">
+                        Abre esta página en <strong>Safari</strong>
+                    </span>
+                </div>
+                <div class="step">
+                    <span class="step-num">2</span>
+                    <span class="step-text">
+                        Toca el botón <span class="step-icon">⬆️</span> de <strong>Compartir</strong>
+                    </span>
+                </div>
+                <div class="step">
+                    <span class="step-num">3</span>
+                    <span class="step-text">
+                        Desliza y selecciona <strong>"Añadir a pantalla de inicio"</strong>
+                    </span>
+                </div>
+                <div class="step">
+                    <span class="step-num">4</span>
+                    <span class="step-text">
+                        Toca <strong>"Añadir"</strong> y ¡listo! 🎉
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Android Instructions -->
+        <div class="install-card android-only">
+            <h2>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="#3DDC84"><path d="M17.6 9.48l1.84-3.18c.16-.31.04-.69-.26-.85-.29-.15-.65-.06-.83.22l-1.88 3.24c-1.4-.59-2.94-.92-4.47-.92s-3.07.33-4.47.92L5.7 5.67c-.19-.29-.58-.38-.87-.2-.28.18-.37.54-.22.83L6.4 9.48C3.3 11.25 1.28 14.44 1 18h22c-.28-3.56-2.3-6.75-5.4-8.52zM7 15.25c-.69 0-1.25-.56-1.25-1.25s.56-1.25 1.25-1.25 1.25.56 1.25 1.25-.56 1.25-1.25 1.25zm10 0c-.69 0-1.25-.56-1.25-1.25s.56-1.25 1.25-1.25 1.25.56 1.25 1.25-.56 1.25-1.25 1.25z"/></svg>
+                Android
+            </h2>
+            <div class="steps">
+                <div class="step">
+                    <span class="step-num">1</span>
+                    <span class="step-text">
+                        Abre esta página en <strong>Chrome</strong>
+                    </span>
+                </div>
+                <div class="step">
+                    <span class="step-num">2</span>
+                    <span class="step-text">
+                        Toca el menú <span class="step-icon">⋮</span> (tres puntos)
+                    </span>
+                </div>
+                <div class="step">
+                    <span class="step-num">3</span>
+                    <span class="step-text">
+                        Selecciona <strong>"Instalar app"</strong> o <strong>"Añadir a pantalla de inicio"</strong>
+                    </span>
+                </div>
+            </div>
+            <button class="install-btn" id="installBtn">
+                📲 Instalar Gatooso
+            </button>
+        </div>
+
+        <a href="/app/" class="open-app-btn">
+            Abrir Gatooso en el navegador →
+        </a>
+
+        <div class="features">
+            <h3>¿Por qué instalar?</h3>
+            <div class="feature-grid">
+                <div class="feature">
+                    <div class="feature-icon">⚡</div>
+                    <div class="feature-text">Acceso rápido</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">📴</div>
+                    <div class="feature-text">Funciona offline</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🔔</div>
+                    <div class="feature-text">Notificaciones</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🎨</div>
+                    <div class="feature-text">Pantalla completa</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Detect platform
+        var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        var isAndroid = /Android/.test(navigator.userAgent);
+        var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
+        if (isIOS) {
+            document.body.classList.add('is-ios');
+        } else if (isAndroid) {
+            document.body.classList.add('is-android');
+        } else {
+            document.body.classList.add('is-desktop');
+        }
+
+        // Show installed message
+        if (isStandalone) {
+            document.getElementById('installedMsg').classList.add('show');
+        }
+
+        // Handle Android install prompt
+        var deferredPrompt = null;
+        var installBtn = document.getElementById('installBtn');
+
+        window.addEventListener('beforeinstallprompt', function(e) {
+            e.preventDefault();
+            deferredPrompt = e;
+            installBtn.classList.add('show');
+        });
+
+        installBtn.addEventListener('click', function() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then(function(choice) {
+                    if (choice.outcome === 'accepted') {
+                        installBtn.textContent = '✅ ¡Instalado!';
+                        installBtn.disabled = true;
+                    }
+                    deferredPrompt = null;
+                });
+            }
+        });
+
+        window.addEventListener('appinstalled', function() {
+            document.getElementById('installedMsg').classList.add('show');
+            installBtn.style.display = 'none';
+        });
+    </script>
+</body>
+</html>

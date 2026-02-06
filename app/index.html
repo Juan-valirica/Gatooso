@@ -215,6 +215,31 @@
 
 </div>
 
+<!-- FRIENDS PANEL (fullscreen) -->
+<div id="friendsPanel" class="friends-overlay" style="display:none">
+
+    <!-- HEADER -->
+    <div class="friends-header">
+        <div class="friends-header-content">
+            <h1>Amigos</h1>
+            <span class="friends-count" id="friendsCount">0</span>
+        </div>
+        <button id="closeFriendsPanel" class="friends-close-btn">&times;</button>
+    </div>
+
+    <!-- SEARCH -->
+    <div class="friends-search-wrap">
+        <i class="ph-magnifying-glass"></i>
+        <input type="text" id="friendsSearch" placeholder="Buscar amigo..." class="friends-search">
+    </div>
+
+    <!-- FRIENDS LIST -->
+    <div id="friendsList" class="friends-list">
+        <!-- Loaded dynamically -->
+    </div>
+
+</div>
+
 <!-- PWA INSTALL BANNER -->
 <div id="installBanner" class="install-banner" style="display:none">
     <div class="install-banner-content">

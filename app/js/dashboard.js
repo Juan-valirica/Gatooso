@@ -75,6 +75,15 @@ var challengeTitle = document.querySelector('.challenge-title');
 var challengeDescription = document.querySelector('.challenge-description');
 var challengeCountdown = document.querySelector('.challenge-countdown');
 
+// Friends
+var navFriends = document.getElementById('navFriends');
+var friendsPanel = document.getElementById('friendsPanel');
+var closeFriendsPanelBtn = document.getElementById('closeFriendsPanel');
+var friendsList = document.getElementById('friendsList');
+var friendsCount = document.getElementById('friendsCount');
+var friendsSearch = document.getElementById('friendsSearch');
+var allFriends = [];
+
 // ===============================
 // INIT
 // ===============================
@@ -89,6 +98,7 @@ document.addEventListener('DOMContentLoaded', function() {
     buildIconGrid();
     initDurationPicker();
     initChallengesPanel();
+    initFriendsPanel();
 });
 
 function loadBoard() {
@@ -153,16 +163,6 @@ function openBoardsPanel() {
 // ===============================
 // WELCOME PERSONALIZATION
 // ===============================
-var WELCOME_TAGLINES = [
-    '¿Listo para capturar el momento?',
-    '¿Qué historia vas a contar hoy?',
-    'Tus amigos esperan tu siguiente foto',
-    'El reto de hoy te espera',
-    '¿Cuál será tu próxima obra maestra?',
-    'Comparte lo que te hace único',
-    'La cámara está lista cuando tú lo estés'
-];
-
 function getFirstName(fullName) {
     if (!fullName) return 'amigo';
     var firstName = fullName.trim().split(/\s+/)[0];
@@ -170,20 +170,9 @@ function getFirstName(fullName) {
     return firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase();
 }
 
-function getTimeGreeting() {
-    var hour = new Date().getHours();
-    if (hour >= 5 && hour < 12) return 'Buenos días,';
-    if (hour >= 12 && hour < 19) return 'Buenas tardes,';
-    return 'Buenas noches,';
-}
-
-function getRandomTagline() {
-    return WELCOME_TAGLINES[Math.floor(Math.random() * WELCOME_TAGLINES.length)];
-}
-
 function updateWelcomeSection() {
     var welcomeAvatar = document.getElementById('welcomeAvatar');
-    var welcomeTime = document.getElementById('welcomeTime');
+    var welcomeGreeting = document.getElementById('welcomeTime');
     var welcomeName = document.getElementById('welcomeName');
     var welcomeTagline = document.getElementById('welcomeTagline');
 
@@ -193,14 +182,14 @@ function updateWelcomeSection() {
     if (welcomeAvatar) {
         welcomeAvatar.textContent = firstName.charAt(0).toUpperCase();
     }
-    if (welcomeTime) {
-        welcomeTime.textContent = getTimeGreeting();
+    if (welcomeGreeting) {
+        welcomeGreeting.textContent = 'Hola,';
     }
     if (welcomeName) {
         welcomeName.textContent = firstName;
     }
     if (welcomeTagline) {
-        welcomeTagline.textContent = getRandomTagline();
+        welcomeTagline.textContent = 'El reto te espera 🔥';
     }
 }
 
@@ -1262,6 +1251,146 @@ function formatDuration(hours) {
 
 function pad(n) {
     return n < 10 ? '0' + n : n;
+}
+
+// ===============================
+// FRIENDS PANEL
+// ===============================
+function initFriendsPanel() {
+    if (navFriends) {
+        navFriends.addEventListener('click', function() {
+            setActiveNav(navFriends);
+            openFriendsPanel();
+        });
+    }
+    if (closeFriendsPanelBtn) {
+        closeFriendsPanelBtn.addEventListener('click', closeFriendsPanel);
+    }
+    if (friendsSearch) {
+        friendsSearch.addEventListener('input', filterFriends);
+    }
+}
+
+function openFriendsPanel() {
+    if (friendsPanel) {
+        friendsPanel.style.display = '';
+        document.body.style.overflow = 'hidden';
+        loadFriendsList();
+    }
+}
+
+function closeFriendsPanel() {
+    if (friendsPanel) {
+        friendsPanel.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+}
+
+function loadFriendsList() {
+    friendsList.innerHTML = '<div class="friends-loading"><div class="spinner"></div></div>';
+
+    fetch('/app/api/get-friends.php')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (!data.success || !data.friends || data.friends.length === 0) {
+                friendsList.innerHTML =
+                    '<div class="friends-empty">' +
+                    '<div class="friends-empty-icon">👥</div>' +
+                    '<h3>Aún no tienes amigos</h3>' +
+                    '<p>Únete a tableros con tus amigos para verlos aquí</p>' +
+                    '</div>';
+                if (friendsCount) friendsCount.textContent = '0';
+                return;
+            }
+
+            allFriends = data.friends;
+            if (friendsCount) friendsCount.textContent = data.total;
+            renderFriendsList(allFriends);
+        })
+        .catch(function() {
+            friendsList.innerHTML =
+                '<div class="friends-empty">' +
+                '<p>No se pudieron cargar los amigos</p>' +
+                '</div>';
+        });
+}
+
+function renderFriendsList(friends) {
+    friendsList.innerHTML = '';
+
+    if (friends.length === 0) {
+        friendsList.innerHTML =
+            '<div class="friends-empty">' +
+            '<div class="friends-empty-icon">🔍</div>' +
+            '<h3>Sin resultados</h3>' +
+            '<p>No encontramos amigos con ese nombre</p>' +
+            '</div>';
+        return;
+    }
+
+    friends.forEach(function(friend) {
+        var card = document.createElement('div');
+        card.className = 'friend-card';
+
+        var initial = friend.name ? friend.name.charAt(0).toUpperCase() : '?';
+        var displayName = friend.name || 'Usuario';
+        var boardsText = friend.shared_boards === 1
+            ? '1 tablero en común'
+            : friend.shared_boards + ' tableros en común';
+
+        var ratingClass = friend.avg_rating > 0 ? '' : ' friend-rating-zero';
+        var ratingDisplay = friend.avg_rating > 0 ? friend.avg_rating.toFixed(1) : '—';
+        var photosText = friend.photo_count === 1 ? '1 foto' : friend.photo_count + ' fotos';
+
+        // Show up to 2 board names as chips
+        var boardChips = '';
+        if (friend.board_names && friend.board_names.length > 0) {
+            var displayBoards = friend.board_names.slice(0, 2);
+            var remaining = friend.board_names.length - 2;
+            boardChips = '<div class="friend-boards-list">';
+            displayBoards.forEach(function(name) {
+                boardChips += '<span class="friend-board-chip">' + escapeHtml(name) + '</span>';
+            });
+            if (remaining > 0) {
+                boardChips += '<span class="friend-board-chip">+' + remaining + '</span>';
+            }
+            boardChips += '</div>';
+        }
+
+        card.innerHTML =
+            '<div class="friend-avatar">' + initial + '</div>' +
+            '<div class="friend-info">' +
+                '<span class="friend-name">' + escapeHtml(displayName) + '</span>' +
+                '<span class="friend-boards">' + boardsText + '</span>' +
+                boardChips +
+            '</div>' +
+            '<div class="friend-stats">' +
+                '<span class="friend-rating' + ratingClass + '">⭐ ' + ratingDisplay + '</span>' +
+                '<span class="friend-photos">' + photosText + '</span>' +
+            '</div>';
+
+        friendsList.appendChild(card);
+    });
+}
+
+function filterFriends() {
+    var query = friendsSearch.value.toLowerCase().trim();
+
+    if (!query) {
+        renderFriendsList(allFriends);
+        return;
+    }
+
+    var filtered = allFriends.filter(function(friend) {
+        return friend.name && friend.name.toLowerCase().includes(query);
+    });
+
+    renderFriendsList(filtered);
+}
+
+function setActiveNav(btn) {
+    bottomNavButtons.forEach(function(b) { b.classList.remove('active'); });
+    if (btn) btn.classList.add('active');
 }
 
 // ===============================
