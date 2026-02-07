@@ -2,6 +2,14 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+html {
+    /* Prevent iOS zoom on input focus */
+    touch-action: manipulation;
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
 }
 
 body {
@@ -9,6 +17,19 @@ body {
     color: #1C1C1E;
     font-family: -apple-system, BlinkMacSystemFont, sans-serif;
     overflow-x: hidden;
+    /* Prevent pull-to-refresh and overscroll bounce */
+    overscroll-behavior: none;
+}
+
+/* Prevent zoom on all inputs - iOS requires 16px minimum */
+input, textarea, select {
+    font-size: 16px !important;
+    touch-action: manipulation;
+}
+
+/* Prevent double-tap zoom on interactive elements */
+button, a, label, .challenge-option-card, .icon-option, .board-card, .cc-duration-btn {
+    touch-action: manipulation;
 }
 
 /* ===============================
@@ -193,6 +214,9 @@ body {
     justify-content: center;
     letter-spacing: 0.5px;
     overflow: hidden;
+    /* Fix Safari clipping */
+    -webkit-mask-image: -webkit-radial-gradient(white, black);
+    mask-image: radial-gradient(white, black);
 }
 .member-avatar.has-image {
     background: transparent;
@@ -274,6 +298,10 @@ body {
     color: #221723;
     font-size: 10px;
     font-weight: 700;
+    overflow: hidden;
+    /* Fix Safari clipping */
+    -webkit-mask-image: -webkit-radial-gradient(white, black);
+    mask-image: radial-gradient(white, black);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -485,7 +513,7 @@ body {
     padding: 12px 14px;
     border: 1px solid #E5E5E7;
     border-radius: 12px;
-    font-size: 15px;
+    font-size: 16px;
     font-family: inherit;
     color: #1C1C1E;
     background: #FAFAFA;
@@ -578,12 +606,22 @@ body {
 
 /* BOARDS WELCOME SECTION */
 .boards-welcome {
-    position: sticky;
-    top: 0;
-    background: linear-gradient(180deg, #FAFAFA 85%, transparent);
+    position: relative;
+    background: #FAFAFA;
     z-index: 2;
     padding: 20px 0 24px;
     animation: welcomeFadeIn 0.5s ease-out;
+    transition: max-height 0.3s ease, opacity 0.3s ease, padding 0.3s ease, margin 0.3s ease;
+    overflow: hidden;
+}
+
+/* Collapse welcome when form is open */
+.boards-welcome.collapsed {
+    max-height: 0;
+    opacity: 0;
+    padding: 0;
+    margin: 0;
+    pointer-events: none;
 }
 
 @keyframes welcomeFadeIn {
@@ -614,6 +652,18 @@ body {
         inset 0 1px 0 rgba(255, 255, 255, 0.1);
     flex-shrink: 0;
     animation: avatarPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both;
+    overflow: hidden;
+    /* Fix Safari clipping */
+    -webkit-mask-image: -webkit-radial-gradient(white, black);
+    mask-image: radial-gradient(white, black);
+}
+
+.welcome-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+    display: block;
 }
 
 @keyframes avatarPop {
@@ -752,7 +802,7 @@ body {
 }
 .cb-input {
     width: 100%; padding: 12px 14px; border: 1px solid #E5E5E7;
-    border-radius: 10px; font-size: 15px; font-family: inherit;
+    border-radius: 10px; font-size: 16px; font-family: inherit;
     color: #221723; background: #FAFAFA; outline: none; transition: border-color 0.2s;
 }
 .cb-input:focus { border-color: #221723; }
@@ -1222,7 +1272,7 @@ body {
     padding: 12px 14px;
     border: 1px solid #E5E5E7;
     border-radius: 10px;
-    font-size: 15px;
+    font-size: 16px;
     font-family: inherit;
     color: #221723;
     background: #FAFAFA;
@@ -1387,6 +1437,9 @@ body {
     justify-content: center;
     flex-shrink: 0;
     overflow: hidden;
+    /* Fix Safari clipping */
+    -webkit-mask-image: -webkit-radial-gradient(white, black);
+    mask-image: radial-gradient(white, black);
 }
 .viewer-avatar.has-image {
     background: transparent;
@@ -1700,7 +1753,7 @@ body {
     border: 1px solid rgba(255,255,255,0.1);
     background: rgba(255,255,255,0.06);
     color: #FFFFFF;
-    font-size: 14px;
+    font-size: 16px;
     font-family: inherit;
     outline: none;
     transition: border-color 0.2s;
@@ -2023,7 +2076,7 @@ body {
     padding: 12px 12px 12px 42px;
     border: 1px solid #E5E5E7;
     border-radius: 12px;
-    font-size: 15px;
+    font-size: 16px;
     font-family: inherit;
     background: #FFFFFF;
     color: #221723;
@@ -2112,6 +2165,10 @@ body {
     text-transform: uppercase;
     flex-shrink: 0;
     box-shadow: 0 2px 8px rgba(34, 23, 35, 0.15);
+    overflow: hidden;
+    /* Fix Safari clipping */
+    -webkit-mask-image: -webkit-radial-gradient(white, black);
+    mask-image: radial-gradient(white, black);
 }
 
 .friend-info {
@@ -2325,12 +2382,20 @@ body {
         0 8px 32px rgba(0, 0, 0, 0.4),
         0 0 0 4px rgba(255, 255, 255, 0.15);
     overflow: hidden;
+    /* Fix Safari clipping issues */
+    -webkit-mask-image: -webkit-radial-gradient(white, black);
+    mask-image: radial-gradient(white, black);
+    isolation: isolate;
+    flex-shrink: 0;
 }
 
 .profile-avatar img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    /* Ensure image doesn't overflow in Safari */
+    border-radius: 50%;
+    display: block;
 }
 
 .profile-avatar-edit {

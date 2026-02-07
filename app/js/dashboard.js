@@ -610,17 +610,40 @@ leaveBoardModal?.addEventListener('click', function(e) {
 // ===============================
 // CREATE BOARD
 // ===============================
+var boardsWelcome = document.querySelector('.boards-welcome');
+
+function collapseWelcome() {
+    if (boardsWelcome) {
+        boardsWelcome.classList.add('collapsed');
+    }
+}
+
+function expandWelcome() {
+    if (boardsWelcome) {
+        boardsWelcome.classList.remove('collapsed');
+    }
+}
+
 if (toggleCreateBoard) {
     toggleCreateBoard.addEventListener('click', function() {
         toggleCreateBoard.style.display = 'none';
         createBoardForm.style.display = '';
-        newBoardTitle.focus();
+        collapseWelcome();
+        // Scroll to top to ensure form is visible
+        if (boardsPanel) {
+            boardsPanel.scrollTop = 0;
+        }
+        // Small delay to ensure form is visible before focus
+        setTimeout(function() {
+            newBoardTitle.focus();
+        }, 100);
     });
 }
 if (cancelCreateBoard) {
     cancelCreateBoard.addEventListener('click', function() {
         createBoardForm.style.display = 'none';
         toggleCreateBoard.style.display = '';
+        expandWelcome();
         resetCreateForm();
     });
 }
@@ -632,6 +655,9 @@ function resetCreateForm() {
     selectedIcon = '⭐';
     updateIconSelection();
     resetChallengeOptionSelection();
+    expandWelcome();
+    if (createBoardForm) createBoardForm.style.display = 'none';
+    if (toggleCreateBoard) toggleCreateBoard.style.display = '';
 }
 
 function initChallengeOptionPicker() {
