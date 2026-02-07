@@ -28,12 +28,60 @@ try {
         exit;
     }
 
-    // Delete board (cascades to board_users, challenges, images, etc.)
+    // Delete board and all related data
+    $pdo->beginTransaction();
+
+    // Delete in order of dependencies (deepest first)
+    // 1. Delete image comments
+    $stmt = $pdo->prepare("
+        DELETE ic FROM image_comments ic
+        INNER JOIN images i ON ic.image_id = i.id
+        INNER JOIN challenges c ON i.challenge_id = c.id
+        WHERE c.board_id = ?
+    ");
+    $stmt->execute([$board_id]);
+
+    // 2. Delete image ratings
+    $stmt = $pdo->prepare("
+        DELETE ir FROM image_ratings ir
+        INNER JOIN images i ON ir.image_id = i.id
+        INNER JOIN challenges c ON i.challenge_id = c.id
+        WHERE c.board_id = ?
+    ");
+    $stmt->execute([$board_id]);
+
+    // 3. Delete images
+    $stmt = $pdo->prepare("
+        DELETE i FROM images i
+        INNER JOIN challenges c ON i.challenge_id = c.id
+        WHERE c.board_id = ?
+    ");
+    $stmt->execute([$board_id]);
+
+    // 4. Delete challenges
+    $stmt = $pdo->prepare("DELETE FROM challenges WHERE board_id = ?");
+    $stmt->execute([$board_id]);
+
+    // 5. Delete board_users
+    $stmt = $pdo->prepare("DELETE FROM board_users WHERE board_id = ?");
+    $stmt->execute([$board_id]);
+
+    // 6. Delete activity_log
+    $stmt = $pdo->prepare("DELETE FROM activity_log WHERE board_id = ?");
+    $stmt->execute([$board_id]);
+
+    // 7. Finally delete the board
     $stmt = $pdo->prepare("DELETE FROM boards WHERE id = ?");
     $stmt->execute([$board_id]);
+
+    $pdo->commit();
 
     echo json_encode(['success' => true, 'message' => 'Tablero eliminado']);
 
 } catch (Exception $e) {
-    echo json_encode(['success' => false, 'message' => 'Error al eliminar']);
+    if ($pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
+    error_log("Delete board error: " . $e->getMessage());
+    echo json_encode(['success' => false, 'message' => 'Error al eliminar: ' . $e->getMessage()]);
 }

@@ -73,9 +73,46 @@ try {
             echo json_encode(['success' => true, 'message' => 'Has salido del tablero y transferido el ownership']);
             exit;
         } else {
-            // No other members, just delete the board
+            // No other members, delete the board and all related data
+            $pdo->beginTransaction();
+
+            // Delete in order of dependencies
+            $stmt = $pdo->prepare("
+                DELETE ic FROM image_comments ic
+                INNER JOIN images i ON ic.image_id = i.id
+                INNER JOIN challenges c ON i.challenge_id = c.id
+                WHERE c.board_id = ?
+            ");
+            $stmt->execute([$board_id]);
+
+            $stmt = $pdo->prepare("
+                DELETE ir FROM image_ratings ir
+                INNER JOIN images i ON ir.image_id = i.id
+                INNER JOIN challenges c ON i.challenge_id = c.id
+                WHERE c.board_id = ?
+            ");
+            $stmt->execute([$board_id]);
+
+            $stmt = $pdo->prepare("
+                DELETE i FROM images i
+                INNER JOIN challenges c ON i.challenge_id = c.id
+                WHERE c.board_id = ?
+            ");
+            $stmt->execute([$board_id]);
+
+            $stmt = $pdo->prepare("DELETE FROM challenges WHERE board_id = ?");
+            $stmt->execute([$board_id]);
+
+            $stmt = $pdo->prepare("DELETE FROM board_users WHERE board_id = ?");
+            $stmt->execute([$board_id]);
+
+            $stmt = $pdo->prepare("DELETE FROM activity_log WHERE board_id = ?");
+            $stmt->execute([$board_id]);
+
             $stmt = $pdo->prepare("DELETE FROM boards WHERE id = ?");
             $stmt->execute([$board_id]);
+
+            $pdo->commit();
 
             echo json_encode(['success' => true, 'message' => 'Tablero eliminado (eras el único miembro)']);
             exit;
@@ -92,5 +129,6 @@ try {
     if ($pdo->inTransaction()) {
         $pdo->rollBack();
     }
-    echo json_encode(['success' => false, 'message' => 'Error al salir del tablero']);
+    error_log("Leave board error: " . $e->getMessage());
+    echo json_encode(['success' => false, 'message' => 'Error al salir: ' . $e->getMessage()]);
 }
