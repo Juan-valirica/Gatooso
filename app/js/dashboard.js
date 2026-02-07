@@ -1115,6 +1115,8 @@ function closeImageViewer() {
     setTimeout(function() {
         viewerOverlay.style.display = 'none';
         document.body.style.overflow = '';
+        // Auto-refresh photos when closing viewer
+        loadPhotos();
     }, 300);
 }
 
@@ -1377,7 +1379,6 @@ function renderComments(comments) {
         bubble.innerHTML =
             '<span class="vc-bubble-avatar">' + getInitials(c.user_name) + '</span>' +
             '<div class="vc-bubble-body">' +
-                '<span class="vc-bubble-name">' + escapeHtml(c.user_name) + '</span>' +
                 '<span class="vc-bubble-text">' + escapeHtml(c.comment) + '</span>' +
             '</div>';
         list.appendChild(bubble);
@@ -1414,7 +1415,6 @@ function submitComment() {
                 bubble.innerHTML =
                     '<span class="vc-bubble-avatar">' + getInitials(data.comment.user_name) + '</span>' +
                     '<div class="vc-bubble-body">' +
-                        '<span class="vc-bubble-name">' + escapeHtml(data.comment.user_name) + '</span>' +
                         '<span class="vc-bubble-text">' + escapeHtml(data.comment.comment) + '</span>' +
                     '</div>';
                 list.appendChild(bubble);
