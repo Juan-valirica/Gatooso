@@ -2429,18 +2429,17 @@ function showWinnerPopup(winner) {
             '<button class="winner-skip" onclick="closeWinnerPopup()">&times;</button>' +
             '<div class="winner-crown">👑</div>' +
             '<div class="winner-avatar">' + avatarContent + '</div>' +
-            '<div class="winner-label">El ganador es</div>' +
+            '<div class="winner-label">Ganador del reto</div>' +
             '<div class="winner-name">' + escapeHtml(winner.winner_name) + '</div>' +
-            '<div class="winner-challenge">' + escapeHtml(winner.challenge_title) + '</div>' +
+            '<div class="winner-challenge">🏆 ' + escapeHtml(winner.challenge_title) + '</div>' +
             '<div class="winner-cta-label">' +
-                'Dale amor a ' + escapeHtml(firstName) + ' 💕<br>' +
-                '<small style="color:#8E8E93">Deja un comentario épico pa\' que suba su ego al infinito</small>' +
+                'Felicita a ' + escapeHtml(firstName) + '<small>Deja un mensaje en su foto ganadora</small>' +
             '</div>' +
             '<div class="winner-comment-wrap">' +
-                '<input type="text" class="winner-comment-input" id="winnerCommentInput" placeholder="Felicidades crack! 🔥">' +
+                '<input type="text" class="winner-comment-input" id="winnerCommentInput" placeholder="Eres un crack! 🔥">' +
                 '<button class="winner-send-btn" onclick="sendWinnerComment()"><i class="ph ph-paper-plane-tilt"></i></button>' +
             '</div>' +
-            '<span class="winner-skip-link" onclick="closeWinnerPopup()">Saltar por ahora</span>' +
+            '<span class="winner-skip-link" onclick="closeWinnerPopup()">Omitir</span>' +
         '</div>';
 
     winnerOverlay.classList.add('active');
@@ -2501,10 +2500,12 @@ function sendWinnerComment() {
 // CONFETTI SYSTEM
 // ===============================
 function launchConfetti() {
-    var colors = ['#FFD700', '#FFA500', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8'];
+    // Brand-aligned colors with gold accents
+    var colors = ['#221723', '#3d2a3f', '#FFD700', '#FFA500', '#FFFFFF', '#E5E5EA'];
     var shapes = ['circle', 'square', 'strip'];
 
-    for (var i = 0; i < 150; i++) {
+    // Fewer, more elegant particles
+    for (var i = 0; i < 60; i++) {
         createConfettiPiece(colors, shapes, i);
     }
 }
@@ -2517,15 +2518,14 @@ function createConfettiPiece(colors, shapes, index) {
 
         confetti.className = 'confetti ' + shape;
         confetti.style.backgroundColor = color;
-        confetti.style.left = Math.random() * 100 + 'vw';
-        confetti.style.top = '-20px';
-        confetti.style.animation = 'confettiFall ' + (2 + Math.random() * 2) + 's linear forwards';
-        confetti.style.animationDelay = (Math.random() * 0.5) + 's';
+        confetti.style.left = (10 + Math.random() * 80) + 'vw';
+        confetti.style.top = '-10px';
+        confetti.style.animation = 'confettiFall ' + (2.5 + Math.random() * 1.5) + 's ease-out forwards';
 
         document.body.appendChild(confetti);
 
         setTimeout(function() {
             if (confetti.parentNode) confetti.parentNode.removeChild(confetti);
-        }, 5000);
-    }, index * 20);
+        }, 4500);
+    }, index * 30);
 }
