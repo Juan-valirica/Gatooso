@@ -611,39 +611,46 @@ leaveBoardModal?.addEventListener('click', function(e) {
 // CREATE BOARD
 // ===============================
 var boardsWelcome = document.querySelector('.boards-welcome');
+var createBoardSection = document.getElementById('createBoardSection');
 
-function collapseWelcome() {
-    if (boardsWelcome) {
-        boardsWelcome.classList.add('collapsed');
-    }
+function openCreateBoardForm() {
+    // Hide welcome and boards list
+    if (boardsWelcome) boardsWelcome.classList.add('collapsed');
+    if (boardsList) boardsList.classList.add('hidden');
+
+    // Move form section to top
+    if (createBoardSection) createBoardSection.classList.add('form-open');
+
+    // Show form, hide toggle
+    if (toggleCreateBoard) toggleCreateBoard.style.display = 'none';
+    if (createBoardForm) createBoardForm.style.display = '';
+
+    // Scroll to top and focus
+    if (boardsPanel) boardsPanel.scrollTop = 0;
+    setTimeout(function() {
+        if (newBoardTitle) newBoardTitle.focus();
+    }, 150);
 }
 
-function expandWelcome() {
-    if (boardsWelcome) {
-        boardsWelcome.classList.remove('collapsed');
-    }
+function closeCreateBoardForm() {
+    // Restore welcome and boards list
+    if (boardsWelcome) boardsWelcome.classList.remove('collapsed');
+    if (boardsList) boardsList.classList.remove('hidden');
+
+    // Restore form section position
+    if (createBoardSection) createBoardSection.classList.remove('form-open');
+
+    // Hide form, show toggle
+    if (createBoardForm) createBoardForm.style.display = 'none';
+    if (toggleCreateBoard) toggleCreateBoard.style.display = '';
 }
 
 if (toggleCreateBoard) {
-    toggleCreateBoard.addEventListener('click', function() {
-        toggleCreateBoard.style.display = 'none';
-        createBoardForm.style.display = '';
-        collapseWelcome();
-        // Scroll to top to ensure form is visible
-        if (boardsPanel) {
-            boardsPanel.scrollTop = 0;
-        }
-        // Small delay to ensure form is visible before focus
-        setTimeout(function() {
-            newBoardTitle.focus();
-        }, 100);
-    });
+    toggleCreateBoard.addEventListener('click', openCreateBoardForm);
 }
 if (cancelCreateBoard) {
     cancelCreateBoard.addEventListener('click', function() {
-        createBoardForm.style.display = 'none';
-        toggleCreateBoard.style.display = '';
-        expandWelcome();
+        closeCreateBoardForm();
         resetCreateForm();
     });
 }
@@ -655,9 +662,7 @@ function resetCreateForm() {
     selectedIcon = '⭐';
     updateIconSelection();
     resetChallengeOptionSelection();
-    expandWelcome();
-    if (createBoardForm) createBoardForm.style.display = 'none';
-    if (toggleCreateBoard) toggleCreateBoard.style.display = '';
+    closeCreateBoardForm();
 }
 
 function initChallengeOptionPicker() {
