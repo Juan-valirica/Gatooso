@@ -319,6 +319,14 @@ function loadBoardsList() {
                         '<i class="ph-sign-out"></i> Salir del tablero' +
                     '</button>';
 
+                var unratedCount = parseInt(board.unrated_count) || 0;
+                var unratedBadge = unratedCount > 0
+                    ? '<div class="board-card-unrated">' +
+                          '<i class="ph ph-star"></i> Tienes ' + unratedCount + ' foto' + (unratedCount !== 1 ? 's' : '') + ' por calificar' +
+                      '</div>'
+                    : '';
+
+                card.setAttribute('data-board-id', board.id);
                 card.innerHTML =
                     '<div class="board-card-top">' +
                         '<span class="board-card-icon">' + icon + '</span>' +
@@ -331,6 +339,7 @@ function loadBoardsList() {
                             '<div class="board-card-dropdown">' + menuItems + '</div>' +
                         '</div>' +
                     '</div>' +
+                    unratedBadge +
                     '<div class="board-card-bottom">' +
                         '<span class="board-card-members">' + members + ' miembro' + (members !== 1 ? 's' : '') + '</span>' +
                         '<span class="board-card-role">' + roleLabel + '</span>' +
@@ -988,6 +997,7 @@ function loadPhotos() {
             photos.forEach(function(photo) {
                 var item = document.createElement('div');
                 item.className = 'grid-item';
+                item.setAttribute('data-photo-id', photo.id);
 
                 var commentCount = parseInt(photo.comment_count) || 0;
                 var commentBadge = commentCount > 0
@@ -1003,10 +1013,16 @@ function loadPhotos() {
                     ? '<div class="grid-item-medal">🏆</div>'
                     : '';
 
+                // Unrated badge for active challenge photos not yet rated by user
+                var unratedBadge = (photo.is_active_challenge && !photo.user_rated)
+                    ? '<div class="grid-item-unrated"><i class="ph ph-star"></i></div>'
+                    : '';
+
                 item.innerHTML =
                     '<img src="' + escapeHtml(photo.image_url) + '" alt="Foto">' +
                     '<div class="grid-item-overlay"></div>' +
                     medalBadge +
+                    unratedBadge +
                     '<div class="grid-item-avatar' + (photo.avatar_url ? ' has-image' : '') + '">' + avatarContent + '</div>' +
                     '<div class="rating-chip">' +
                         '<span class="star">' + icon + '</span>' +
@@ -1274,6 +1290,17 @@ function handleRatingClick(e) {
                     showAverageRating(data.new_avg, data.rating_count);
                     isRatingInProgress = false;
                 }, 400);
+
+                // Remove unrated badge from this photo in the grid
+                var photoItem = photoGrid ? photoGrid.querySelector('[data-photo-id="' + currentViewImage.id + '"]') : null;
+                if (photoItem) {
+                    var unratedBadge = photoItem.querySelector('.grid-item-unrated');
+                    if (unratedBadge) {
+                        unratedBadge.remove();
+                        // Update board card unrated count
+                        updateBoardUnratedCount(-1);
+                    }
+                }
             } else {
                 isRatingInProgress = false;
             }
@@ -1281,6 +1308,28 @@ function handleRatingClick(e) {
         .catch(function() {
             isRatingInProgress = false;
         });
+}
+
+// Update the unrated count badge in the boards panel
+function updateBoardUnratedCount(delta) {
+    if (!currentBoardId) return;
+    var boardCard = document.querySelector('.board-card[data-board-id="' + currentBoardId + '"]');
+    if (!boardCard) return;
+
+    var unratedDiv = boardCard.querySelector('.board-card-unrated');
+    if (unratedDiv) {
+        // Parse current count from text
+        var text = unratedDiv.textContent;
+        var match = text.match(/(\d+)/);
+        if (match) {
+            var currentCount = parseInt(match[1]) + delta;
+            if (currentCount <= 0) {
+                unratedDiv.remove();
+            } else {
+                unratedDiv.innerHTML = '<i class="ph ph-star"></i> Tienes ' + currentCount + ' foto' + (currentCount !== 1 ? 's' : '') + ' por calificar';
+            }
+        }
+    }
 }
 
 function applyRatingUI(rating, animate) {

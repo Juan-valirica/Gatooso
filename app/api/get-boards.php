@@ -39,4 +39,36 @@ try {
 
 $boards = $stmt->fetchAll();
 
+// For each board, count unrated photos from active challenge
+foreach ($boards as &$board) {
+    $board['unrated_count'] = 0;
+    try {
+        // Get active challenge for this board
+        $stmtChallenge = $pdo->prepare("
+            SELECT id FROM challenges
+            WHERE board_id = ? AND status = 'active'
+            LIMIT 1
+        ");
+        $stmtChallenge->execute([$board['id']]);
+        $activeChallenge = $stmtChallenge->fetch();
+
+        if ($activeChallenge) {
+            // Count images from active challenge that user hasn't rated
+            $stmtUnrated = $pdo->prepare("
+                SELECT COUNT(*) as cnt FROM images i
+                WHERE i.challenge_id = ?
+                AND i.id NOT IN (
+                    SELECT image_id FROM image_ratings WHERE user_id = ?
+                )
+            ");
+            $stmtUnrated->execute([$activeChallenge['id'], $user_id]);
+            $unrated = $stmtUnrated->fetch();
+            $board['unrated_count'] = intval($unrated['cnt']);
+        }
+    } catch (PDOException $e) {
+        // Silently fail, keep default 0
+    }
+}
+unset($board);
+
 echo json_encode(['success' => true, 'boards' => $boards]);

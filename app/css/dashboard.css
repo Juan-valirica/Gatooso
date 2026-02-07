@@ -3390,3 +3390,67 @@ body.app-hidden .viewer-image img {
     pointer-events: none;
     z-index: 3;
 }
+
+/* ===============================
+   UNRATED PHOTO INDICATORS
+   =============================== */
+
+/* Badge on board cards showing unrated count */
+.board-card-unrated {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+    padding: 8px 12px;
+    background: linear-gradient(135deg, #FFE4B5 0%, #FFD280 100%);
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #8B4513;
+    animation: unratedPulse 2s ease-in-out infinite;
+}
+
+.board-card-unrated i {
+    font-size: 14px;
+}
+
+@keyframes unratedPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.85; }
+}
+
+/* Star indicator on unrated photos in grid */
+.grid-item-unrated {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 26px;
+    height: 26px;
+    background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: #FFFFFF;
+    box-shadow: 0 2px 8px rgba(255, 165, 0, 0.5);
+    z-index: 5;
+    animation: unratedBounce 1.5s ease-in-out infinite;
+    border: 2px solid rgba(255, 255, 255, 0.9);
+}
+
+@keyframes unratedBounce {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+/* Subtle glow border for unrated photos */
+.grid-item:has(.grid-item-unrated)::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: inset 0 0 0 2px rgba(255, 215, 0, 0.5);
+    pointer-events: none;
+    z-index: 4;
+}
