@@ -18,6 +18,12 @@ if (!$image_id || !$comment) {
     exit;
 }
 
+// Validate comment length (max 500 characters)
+if (mb_strlen($comment) > 500) {
+    echo json_encode(['success' => false, 'message' => 'Comentario muy largo (máx. 500 caracteres)']);
+    exit;
+}
+
 // Auto-create table if it doesn't exist
 try {
     $pdo->exec("CREATE TABLE IF NOT EXISTS image_comments (

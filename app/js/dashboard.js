@@ -22,6 +22,51 @@ var ICON_OPTIONS = [
 ];
 
 // ===============================
+// IMAGE PROTECTION
+// ===============================
+(function() {
+    // Prevent context menu (right-click) on images
+    document.addEventListener('contextmenu', function(e) {
+        if (e.target.tagName === 'IMG' || e.target.closest('.grid-item') || e.target.closest('.viewer-image')) {
+            e.preventDefault();
+            return false;
+        }
+    });
+
+    // Prevent drag on images
+    document.addEventListener('dragstart', function(e) {
+        if (e.target.tagName === 'IMG') {
+            e.preventDefault();
+            return false;
+        }
+    });
+
+    // Screenshot protection - blur content when app loses focus
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            document.body.classList.add('app-hidden');
+        } else {
+            document.body.classList.remove('app-hidden');
+        }
+    });
+
+    // Also blur on window blur (when switching apps)
+    window.addEventListener('blur', function() {
+        document.body.classList.add('app-hidden');
+    });
+    window.addEventListener('focus', function() {
+        document.body.classList.remove('app-hidden');
+    });
+
+    // Prevent long-press context menu on mobile
+    document.addEventListener('touchstart', function(e) {
+        if (e.target.tagName === 'IMG' || e.target.closest('.grid-item') || e.target.closest('.viewer-image')) {
+            e.target.style.webkitTouchCallout = 'none';
+        }
+    }, { passive: true });
+})();
+
+// ===============================
 // ELEMENTS
 // ===============================
 var storiesBar = document.getElementById('storiesBar');

@@ -21,9 +21,7 @@ try {
         echo json_encode([
             'success' => true,
             'friends' => [],
-            'total' => 0,
-            'debug_step' => 'no_boards',
-            'user_id' => $user_id
+            'total' => 0
         ]);
         exit;
     }
@@ -46,10 +44,7 @@ try {
         echo json_encode([
             'success' => true,
             'friends' => [],
-            'total' => 0,
-            'debug_step' => 'no_friends_found',
-            'my_boards' => $myBoards,
-            'sql' => $sql
+            'total' => 0
         ]);
         exit;
     }
@@ -109,10 +104,9 @@ try {
     ]);
 
 } catch (Exception $e) {
+    error_log("Get friends error: " . $e->getMessage());
     echo json_encode([
         'success' => false,
-        'message' => 'Error al cargar amigos',
-        'debug' => $e->getMessage(),
-        'trace' => $e->getTraceAsString()
+        'message' => 'Error al cargar amigos'
     ]);
 }

@@ -26,6 +26,11 @@ if (!$board_id) {
 $file = $_FILES['photo'];
 $caption = trim($_POST['caption'] ?? '');
 
+// Validate caption length (max 280 characters)
+if (mb_strlen($caption) > 280) {
+    $caption = mb_substr($caption, 0, 280);
+}
+
 // Validate mime type
 $allowed = ['image/jpeg', 'image/png', 'image/webp'];
 $finfo = finfo_open(FILEINFO_MIME_TYPE);
