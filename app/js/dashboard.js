@@ -1862,7 +1862,9 @@ function startCountdown(endsAt) {
                 '<span class="divider">:</span>' +
                 '<span class="time">' + pad(timeLeft.hours) + '</span>h' +
                 '<span class="divider">:</span>' +
-                '<span class="time">' + pad(timeLeft.minutes) + '</span>m';
+                '<span class="time">' + pad(timeLeft.minutes) + '</span>m' +
+                '<span class="divider">:</span>' +
+                '<span class="time">' + pad(timeLeft.seconds) + '</span>s';
         }
 
         // Also update the panel timer if open
@@ -1873,30 +1875,32 @@ function startCountdown(endsAt) {
     }
 
     updateCountdown();
-    countdownInterval = setInterval(updateCountdown, 60000); // Update every minute
+    countdownInterval = setInterval(updateCountdown, 1000); // Update every second
 }
 
 function getTimeRemaining(endsAt) {
-    if (!endsAt) return { total: 0, days: 0, hours: 0, minutes: 0 };
+    if (!endsAt) return { total: 0, days: 0, hours: 0, minutes: 0, seconds: 0 };
 
     var endTime = new Date(endsAt).getTime();
     var now = Date.now();
     var diff = endTime - now;
 
-    if (diff <= 0) return { total: 0, days: 0, hours: 0, minutes: 0 };
+    if (diff <= 0) return { total: 0, days: 0, hours: 0, minutes: 0, seconds: 0 };
 
     var days = Math.floor(diff / (1000 * 60 * 60 * 24));
     var hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
     var minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    var seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
-    return { total: diff, days: days, hours: hours, minutes: minutes };
+    return { total: diff, days: days, hours: hours, minutes: minutes, seconds: seconds };
 }
 
 function formatTimeLeft(t) {
     if (t.total <= 0) return 'Terminado';
-    if (t.days > 0) return t.days + 'd ' + t.hours + 'h';
-    if (t.hours > 0) return t.hours + 'h ' + t.minutes + 'm';
-    return t.minutes + 'm';
+    if (t.days > 0) return t.days + 'd ' + t.hours + 'h ' + t.minutes + 'm';
+    if (t.hours > 0) return t.hours + 'h ' + t.minutes + 'm ' + t.seconds + 's';
+    if (t.minutes > 0) return t.minutes + 'm ' + t.seconds + 's';
+    return t.seconds + 's';
 }
 
 function formatDuration(hours) {
