@@ -23,14 +23,51 @@ try {
 try {
     $pdo->exec("ALTER TABLE challenges ADD COLUMN ends_at TIMESTAMP NULL");
 } catch (PDOException $e) {}
+try {
+    $pdo->exec("ALTER TABLE challenges ADD COLUMN winner_image_id INT NULL");
+} catch (PDOException $e) {}
 
-// Check if any challenge is active but expired
+// Create winner_seen table if not exists
+try {
+    $pdo->exec("CREATE TABLE IF NOT EXISTS winner_seen (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        challenge_id INT NOT NULL,
+        seen_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY unique_user_challenge (user_id, challenge_id)
+    )");
+} catch (PDOException $e) {}
+
+// Check if any challenge is active but expired - also determine winner
 $stmt = $pdo->prepare("
-    UPDATE challenges
-    SET status = 'completed'
+    SELECT id FROM challenges
     WHERE board_id = ? AND status = 'active' AND ends_at IS NOT NULL AND ends_at < NOW()
 ");
 $stmt->execute([$board_id]);
+$expiredChallenges = $stmt->fetchAll();
+
+foreach ($expiredChallenges as $expired) {
+    // Find the winning image (highest rating)
+    $winnerStmt = $pdo->prepare("
+        SELECT id FROM images
+        WHERE challenge_id = ?
+        ORDER BY rating DESC, created_at ASC
+        LIMIT 1
+    ");
+    $winnerStmt->execute([$expired['id']]);
+    $winnerImage = $winnerStmt->fetch();
+
+    // Update challenge to completed with winner
+    $updateStmt = $pdo->prepare("
+        UPDATE challenges
+        SET status = 'completed', winner_image_id = ?
+        WHERE id = ?
+    ");
+    $updateStmt->execute([
+        $winnerImage ? $winnerImage['id'] : null,
+        $expired['id']
+    ]);
+}
 
 // If no active challenge, activate the next queued one
 $stmt = $pdo->prepare("SELECT id FROM challenges WHERE board_id = ? AND status = 'active' LIMIT 1");

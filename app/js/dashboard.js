@@ -177,6 +177,7 @@ function loadBoard() {
     loadPhotos();
     loadBoardMembers();
     loadActiveChallenge();
+    checkForWinner();
 }
 
 // ===============================
@@ -997,9 +998,15 @@ function loadPhotos() {
                     ? '<img src="' + photo.avatar_url + '" alt="">'
                     : getInitials(photo.user_name);
 
+                // Medal for winner photos
+                var medalBadge = photo.is_winner
+                    ? '<div class="grid-item-medal">🏆</div>'
+                    : '';
+
                 item.innerHTML =
                     '<img src="' + escapeHtml(photo.image_url) + '" alt="Foto">' +
                     '<div class="grid-item-overlay"></div>' +
+                    medalBadge +
                     '<div class="grid-item-avatar' + (photo.avatar_url ? ' has-image' : '') + '">' + avatarContent + '</div>' +
                     '<div class="rating-chip">' +
                         '<span class="star">' + icon + '</span>' +
@@ -1865,6 +1872,10 @@ function startCountdown(endsAt) {
                 '<span class="time">' + pad(timeLeft.minutes) + '</span>m' +
                 '<span class="divider">:</span>' +
                 '<span class="time">' + pad(timeLeft.seconds) + '</span>s';
+
+            // Add urgent class when less than 1 hour remains
+            var isUrgent = timeLeft.days === 0 && timeLeft.hours === 0;
+            challengeCountdown.classList.toggle('countdown-urgent', isUrgent);
         }
 
         // Also update the panel timer if open
@@ -2376,3 +2387,145 @@ window.addEventListener('appinstalled', function() {
     hideInstallBanner();
     deferredPrompt = null;
 });
+
+// ===============================
+// WINNER POPUP SYSTEM
+// ===============================
+var winnerOverlay = null;
+var currentWinnerData = null;
+
+function checkForWinner() {
+    if (!currentBoardId) return;
+
+    fetch('/app/api/get-winner.php?board_id=' + currentBoardId)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success && data.has_winner) {
+                currentWinnerData = data.winner;
+                showWinnerPopup(data.winner);
+            }
+        })
+        .catch(function() {});
+}
+
+function showWinnerPopup(winner) {
+    if (!winner) return;
+
+    // Build overlay
+    if (!winnerOverlay) {
+        winnerOverlay = document.createElement('div');
+        winnerOverlay.className = 'winner-overlay';
+        document.body.appendChild(winnerOverlay);
+    }
+
+    var avatarContent = winner.winner_avatar
+        ? '<img src="' + winner.winner_avatar + '" alt="">'
+        : getInitials(winner.winner_name);
+
+    var firstName = getFirstName(winner.winner_name);
+
+    winnerOverlay.innerHTML =
+        '<div class="winner-popup">' +
+            '<button class="winner-skip" onclick="closeWinnerPopup()">&times;</button>' +
+            '<div class="winner-crown">👑</div>' +
+            '<div class="winner-avatar">' + avatarContent + '</div>' +
+            '<div class="winner-label">El ganador es</div>' +
+            '<div class="winner-name">' + escapeHtml(winner.winner_name) + '</div>' +
+            '<div class="winner-challenge">' + escapeHtml(winner.challenge_title) + '</div>' +
+            '<div class="winner-cta-label">' +
+                'Dale amor a ' + escapeHtml(firstName) + ' 💕<br>' +
+                '<small style="color:#8E8E93">Deja un comentario épico pa\' que suba su ego al infinito</small>' +
+            '</div>' +
+            '<div class="winner-comment-wrap">' +
+                '<input type="text" class="winner-comment-input" id="winnerCommentInput" placeholder="Felicidades crack! 🔥">' +
+                '<button class="winner-send-btn" onclick="sendWinnerComment()"><i class="ph ph-paper-plane-tilt"></i></button>' +
+            '</div>' +
+            '<span class="winner-skip-link" onclick="closeWinnerPopup()">Saltar por ahora</span>' +
+        '</div>';
+
+    winnerOverlay.classList.add('active');
+
+    // Trigger confetti
+    setTimeout(launchConfetti, 300);
+
+    // Enter key to send
+    var input = document.getElementById('winnerCommentInput');
+    if (input) {
+        input.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') sendWinnerComment();
+        });
+        setTimeout(function() { input.focus(); }, 500);
+    }
+}
+
+function closeWinnerPopup() {
+    if (!winnerOverlay) return;
+
+    // Mark as seen
+    if (currentWinnerData) {
+        var fd = new FormData();
+        fd.append('challenge_id', currentWinnerData.challenge_id);
+        fetch('/app/api/mark-winner-seen.php', { method: 'POST', body: fd }).catch(function() {});
+    }
+
+    winnerOverlay.classList.remove('active');
+    currentWinnerData = null;
+}
+
+function sendWinnerComment() {
+    var input = document.getElementById('winnerCommentInput');
+    var comment = input ? input.value.trim() : '';
+
+    if (!comment || !currentWinnerData) {
+        closeWinnerPopup();
+        return;
+    }
+
+    // Send comment to the winning image
+    var fd = new FormData();
+    fd.append('image_id', currentWinnerData.image_id);
+    fd.append('comment', comment);
+
+    fetch('/app/api/add-comment.php', { method: 'POST', body: fd })
+        .then(function(r) { return r.json(); })
+        .then(function() {
+            closeWinnerPopup();
+            loadPhotos(); // Refresh to show new comment count
+        })
+        .catch(function() {
+            closeWinnerPopup();
+        });
+}
+
+// ===============================
+// CONFETTI SYSTEM
+// ===============================
+function launchConfetti() {
+    var colors = ['#FFD700', '#FFA500', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8'];
+    var shapes = ['circle', 'square', 'strip'];
+
+    for (var i = 0; i < 150; i++) {
+        createConfettiPiece(colors, shapes, i);
+    }
+}
+
+function createConfettiPiece(colors, shapes, index) {
+    setTimeout(function() {
+        var confetti = document.createElement('div');
+        var shape = shapes[Math.floor(Math.random() * shapes.length)];
+        var color = colors[Math.floor(Math.random() * colors.length)];
+
+        confetti.className = 'confetti ' + shape;
+        confetti.style.backgroundColor = color;
+        confetti.style.left = Math.random() * 100 + 'vw';
+        confetti.style.top = '-20px';
+        confetti.style.animation = 'confettiFall ' + (2 + Math.random() * 2) + 's linear forwards';
+        confetti.style.animationDelay = (Math.random() * 0.5) + 's';
+
+        document.body.appendChild(confetti);
+
+        setTimeout(function() {
+            if (confetti.parentNode) confetti.parentNode.removeChild(confetti);
+        }, 5000);
+    }, index * 20);
+}
