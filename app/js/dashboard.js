@@ -12,6 +12,8 @@ var viewerOverlay = null;
 var isRatingInProgress = false;
 var countdownInterval = null;
 var selectedDuration = 72;
+var selectedChallengeOption = 'default';
+var firstChallengeDuration = 72;
 
 var ICON_OPTIONS = [
     '⭐','🔥','🍆','💃','🤙','😏',
@@ -111,6 +113,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     buildIconGrid();
     initDurationPicker();
+    initChallengeOptionPicker();
     initChallengesPanel();
     initFriendsPanel();
     initProfilePanel();
@@ -628,6 +631,75 @@ function resetCreateForm() {
     if (customIcon) customIcon.value = '';
     selectedIcon = '⭐';
     updateIconSelection();
+    resetChallengeOptionSelection();
+}
+
+function initChallengeOptionPicker() {
+    var optionDefault = document.getElementById('challengeOptionDefault');
+    var optionCustom = document.getElementById('challengeOptionCustom');
+    var customFields = document.getElementById('customChallengeFields');
+    var durationPicker = document.getElementById('firstChallengeDuration');
+
+    if (optionDefault) {
+        optionDefault.addEventListener('click', function() {
+            selectChallengeOption('default');
+        });
+    }
+    if (optionCustom) {
+        optionCustom.addEventListener('click', function() {
+            selectChallengeOption('custom');
+        });
+    }
+
+    // Duration picker for first challenge
+    if (durationPicker) {
+        var btns = durationPicker.querySelectorAll('.cc-duration-btn');
+        btns.forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                btns.forEach(function(b) { b.classList.remove('active'); });
+                btn.classList.add('active');
+                firstChallengeDuration = parseInt(btn.dataset.hours) || 72;
+            });
+        });
+    }
+}
+
+function selectChallengeOption(option) {
+    var optionDefault = document.getElementById('challengeOptionDefault');
+    var optionCustom = document.getElementById('challengeOptionCustom');
+    var customFields = document.getElementById('customChallengeFields');
+
+    selectedChallengeOption = option;
+
+    if (optionDefault) optionDefault.classList.toggle('selected', option === 'default');
+    if (optionCustom) optionCustom.classList.toggle('selected', option === 'custom');
+
+    if (customFields) {
+        customFields.style.display = option === 'custom' ? '' : 'none';
+        if (option === 'custom') {
+            var titleInput = document.getElementById('firstChallengeTitle');
+            if (titleInput) titleInput.focus();
+        }
+    }
+}
+
+function resetChallengeOptionSelection() {
+    selectedChallengeOption = 'default';
+    firstChallengeDuration = 72;
+    selectChallengeOption('default');
+
+    var titleInput = document.getElementById('firstChallengeTitle');
+    var descInput = document.getElementById('firstChallengeDesc');
+    if (titleInput) titleInput.value = '';
+    if (descInput) descInput.value = '';
+
+    var durationPicker = document.getElementById('firstChallengeDuration');
+    if (durationPicker) {
+        var btns = durationPicker.querySelectorAll('.cc-duration-btn');
+        btns.forEach(function(b) {
+            b.classList.toggle('active', parseInt(b.dataset.hours) === 72);
+        });
+    }
 }
 
 if (createBoardBtn) {
@@ -638,6 +710,15 @@ if (createBoardBtn) {
             return;
         }
 
+        // Validate custom challenge if selected
+        if (selectedChallengeOption === 'custom') {
+            var challengeTitle = document.getElementById('firstChallengeTitle');
+            if (challengeTitle && !challengeTitle.value.trim()) {
+                challengeTitle.focus();
+                return;
+            }
+        }
+
         createBoardBtn.disabled = true;
         createBoardBtn.textContent = 'Creando...';
 
@@ -645,6 +726,15 @@ if (createBoardBtn) {
         fd.append('title', title);
         fd.append('description', newBoardDesc.value.trim());
         fd.append('rating_icon', selectedIcon);
+        fd.append('challenge_option', selectedChallengeOption);
+
+        if (selectedChallengeOption === 'custom') {
+            var challengeTitleEl = document.getElementById('firstChallengeTitle');
+            var challengeDescEl = document.getElementById('firstChallengeDesc');
+            fd.append('challenge_title', challengeTitleEl ? challengeTitleEl.value.trim() : '');
+            fd.append('challenge_description', challengeDescEl ? challengeDescEl.value.trim() : '');
+            fd.append('challenge_duration', firstChallengeDuration);
+        }
 
         fetch('/app/api/create-board.php', { method: 'POST', body: fd })
             .then(function(r) { return r.json(); })
@@ -1371,21 +1461,23 @@ function loadChallenges() {
         .then(function(data) {
             if (!data.success) return;
 
+            var canEdit = data.can_edit || false;
+
             // Render active challenge
-            renderActiveChallengeCard(data.active);
+            renderActiveChallengeCard(data.active, canEdit);
 
             // Update queue count
             if (queueCount) queueCount.textContent = data.queued_count;
 
             // Render queue
-            renderQueueList(data.queued);
+            renderQueueList(data.queued, canEdit);
         })
         .catch(function() {
             activeChallengeCard.innerHTML = '<div class="ac-empty"><p>Error al cargar</p></div>';
         });
 }
 
-function renderActiveChallengeCard(challenge) {
+function renderActiveChallengeCard(challenge, canEdit) {
     if (!challenge) {
         activeChallengeCard.innerHTML =
             '<div class="ac-empty">' +
@@ -1397,20 +1489,38 @@ function renderActiveChallengeCard(challenge) {
     }
 
     var timeLeft = getTimeRemaining(challenge.ends_at);
+    var editBtn = canEdit ? '<button class="ac-edit-btn" data-challenge-id="' + challenge.id + '" data-title="' + escapeHtml(challenge.title) + '" data-desc="' + escapeHtml(challenge.description || '') + '" data-duration="' + (challenge.duration_hours || 72) + '"><i class="ph-pencil-simple"></i></button>' : '';
 
     activeChallengeCard.innerHTML =
         '<div class="ac-header">' +
             '<span class="ac-title">' + escapeHtml(challenge.title) + '</span>' +
-            '<span class="ac-timer" id="acTimer">' + formatTimeLeft(timeLeft) + '</span>' +
+            '<div class="ac-header-right">' +
+                editBtn +
+                '<span class="ac-timer" id="acTimer">' + formatTimeLeft(timeLeft) + '</span>' +
+            '</div>' +
         '</div>' +
         '<p class="ac-description">' + escapeHtml(challenge.description || 'Sin descripción') + '</p>' +
         '<div class="ac-stats">' +
             '<span class="ac-stat"><i class="ph-image"></i> <span class="ac-stat-value">' + (challenge.photo_count || 0) + '</span> fotos</span>' +
             '<span class="ac-stat"><i class="ph-user"></i> por <span class="ac-stat-value">' + escapeHtml(challenge.creator_name || 'Sistema') + '</span></span>' +
         '</div>';
+
+    // Attach edit button listener
+    var editBtnEl = activeChallengeCard.querySelector('.ac-edit-btn');
+    if (editBtnEl) {
+        editBtnEl.addEventListener('click', function(e) {
+            e.stopPropagation();
+            openEditChallengeModal(
+                editBtnEl.dataset.challengeId,
+                editBtnEl.dataset.title,
+                editBtnEl.dataset.desc,
+                parseInt(editBtnEl.dataset.duration) || 72
+            );
+        });
+    }
 }
 
-function renderQueueList(queued) {
+function renderQueueList(queued, canEdit) {
     if (!queued || queued.length === 0) {
         queueList.innerHTML = '<div class="queue-empty">No hay retos en cola</div>';
         return;
@@ -1419,6 +1529,8 @@ function renderQueueList(queued) {
     queueList.innerHTML = '';
     queued.forEach(function(ch, idx) {
         var durationText = formatDuration(ch.duration_hours);
+        var editBtn = canEdit ? '<button class="queue-edit-btn" data-challenge-id="' + ch.id + '" data-title="' + escapeHtml(ch.title) + '" data-desc="' + escapeHtml(ch.description || '') + '" data-duration="' + (ch.duration_hours || 72) + '"><i class="ph-pencil-simple"></i></button>' : '';
+
         var item = document.createElement('div');
         item.className = 'queue-item';
         item.innerHTML =
@@ -1427,10 +1539,129 @@ function renderQueueList(queued) {
                 '<span class="queue-title">' + escapeHtml(ch.title) + '</span>' +
                 '<span class="queue-meta">por ' + escapeHtml(ch.creator_name || 'Usuario') + '</span>' +
             '</div>' +
-            '<span class="queue-duration">' + durationText + '</span>';
+            '<div class="queue-actions">' +
+                editBtn +
+                '<span class="queue-duration">' + durationText + '</span>' +
+            '</div>';
+
+        // Attach edit button listener
+        var editBtnEl = item.querySelector('.queue-edit-btn');
+        if (editBtnEl) {
+            editBtnEl.addEventListener('click', function(e) {
+                e.stopPropagation();
+                openEditChallengeModal(
+                    editBtnEl.dataset.challengeId,
+                    editBtnEl.dataset.title,
+                    editBtnEl.dataset.desc,
+                    parseInt(editBtnEl.dataset.duration) || 72
+                );
+            });
+        }
+
         queueList.appendChild(item);
     });
 }
+
+// ===============================
+// EDIT CHALLENGE MODAL
+// ===============================
+var editChallengeModal = document.getElementById('editChallengeModal');
+var editChallengeDuration = 72;
+
+function openEditChallengeModal(challengeId, title, desc, duration) {
+    document.getElementById('editChallengeId').value = challengeId;
+    document.getElementById('editChallengeTitle').value = title || '';
+    document.getElementById('editChallengeDesc').value = desc || '';
+    editChallengeDuration = duration || 72;
+
+    // Update duration picker
+    var durationPicker = document.getElementById('editChallengeDuration');
+    if (durationPicker) {
+        var btns = durationPicker.querySelectorAll('.cc-duration-btn');
+        btns.forEach(function(b) {
+            b.classList.toggle('active', parseInt(b.dataset.hours) === editChallengeDuration);
+        });
+    }
+
+    if (editChallengeModal) {
+        editChallengeModal.style.display = 'flex';
+    }
+}
+
+function closeEditChallengeModal() {
+    if (editChallengeModal) {
+        editChallengeModal.style.display = 'none';
+    }
+}
+
+function saveEditChallenge() {
+    var challengeId = document.getElementById('editChallengeId').value;
+    var title = document.getElementById('editChallengeTitle').value.trim();
+    var desc = document.getElementById('editChallengeDesc').value.trim();
+
+    if (!title) {
+        document.getElementById('editChallengeTitle').focus();
+        return;
+    }
+
+    var saveBtn = document.getElementById('saveEditChallengeBtn');
+    if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<div class="spinner" style="width:18px;height:18px;border-width:2px;"></div> Guardando...';
+    }
+
+    var fd = new FormData();
+    fd.append('challenge_id', challengeId);
+    fd.append('title', title);
+    fd.append('description', desc);
+    fd.append('duration_hours', editChallengeDuration);
+
+    fetch('/app/api/edit-challenge.php', { method: 'POST', body: fd })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (saveBtn) {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i class="ph-check"></i> Guardar cambios';
+            }
+
+            if (data.success) {
+                closeEditChallengeModal();
+                loadChallenges();
+                loadActiveChallenge(); // Update header
+            } else {
+                alert(data.message || 'Error al guardar');
+            }
+        })
+        .catch(function() {
+            if (saveBtn) {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i class="ph-check"></i> Guardar cambios';
+            }
+            alert('Error de conexión');
+        });
+}
+
+// Initialize edit challenge modal events
+document.getElementById('closeEditChallengeModal')?.addEventListener('click', closeEditChallengeModal);
+document.getElementById('saveEditChallengeBtn')?.addEventListener('click', saveEditChallenge);
+editChallengeModal?.addEventListener('click', function(e) {
+    if (e.target === editChallengeModal) closeEditChallengeModal();
+});
+
+// Edit challenge duration picker
+(function() {
+    var durationPicker = document.getElementById('editChallengeDuration');
+    if (durationPicker) {
+        var btns = durationPicker.querySelectorAll('.cc-duration-btn');
+        btns.forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                btns.forEach(function(b) { b.classList.remove('active'); });
+                btn.classList.add('active');
+                editChallengeDuration = parseInt(btn.dataset.hours) || 72;
+            });
+        });
+    }
+})();
 
 // ===============================
 // DURATION PICKER

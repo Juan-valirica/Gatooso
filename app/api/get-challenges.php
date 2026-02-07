@@ -96,10 +96,25 @@ $stmt = $pdo->prepare("
 $stmt->execute([$board_id]);
 $completedChallenges = $stmt->fetchAll();
 
+// Get current user's role in this board
+$user_role = null;
+$can_edit = false;
+if (isset($_SESSION['user_id'])) {
+    $stmt = $pdo->prepare("SELECT role FROM board_users WHERE board_id = ? AND user_id = ?");
+    $stmt->execute([$board_id, $_SESSION['user_id']]);
+    $membership = $stmt->fetch();
+    if ($membership) {
+        $user_role = $membership['role'];
+        $can_edit = in_array($user_role, ['owner', 'admin']);
+    }
+}
+
 echo json_encode([
     'success' => true,
     'active' => $activeChallenge ?: null,
     'queued' => $queuedChallenges,
     'queued_count' => count($queuedChallenges),
-    'completed' => $completedChallenges
+    'completed' => $completedChallenges,
+    'user_role' => $user_role,
+    'can_edit' => $can_edit
 ]);

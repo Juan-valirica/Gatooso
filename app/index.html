@@ -153,6 +153,43 @@
                 </div>
             </div>
 
+            <!-- First challenge option -->
+            <div class="first-challenge-picker">
+                <label class="icon-picker-label">Primer reto del tablero</label>
+                <div class="challenge-option-cards">
+                    <div class="challenge-option-card selected" id="challengeOptionDefault" data-option="default">
+                        <div class="challenge-option-icon">🐼</div>
+                        <div class="challenge-option-info">
+                            <span class="challenge-option-title">Reto GatOOso</span>
+                            <span class="challenge-option-desc">Sube tu foto más curiosa, rara o random</span>
+                        </div>
+                        <span class="challenge-option-check"><i class="ph-check-circle"></i></span>
+                    </div>
+                    <div class="challenge-option-card" id="challengeOptionCustom" data-option="custom">
+                        <div class="challenge-option-icon">✨</div>
+                        <div class="challenge-option-info">
+                            <span class="challenge-option-title">Crear mi propio reto</span>
+                            <span class="challenge-option-desc">Define título, descripción y duración</span>
+                        </div>
+                        <span class="challenge-option-check"><i class="ph-check-circle"></i></span>
+                    </div>
+                </div>
+
+                <!-- Custom challenge form (hidden by default) -->
+                <div id="customChallengeFields" class="custom-challenge-fields" style="display:none">
+                    <input type="text" id="firstChallengeTitle" placeholder="Título del reto" class="cb-input" maxlength="100">
+                    <textarea id="firstChallengeDesc" placeholder="Descripción del reto (opcional)" class="cb-input cb-textarea" maxlength="280"></textarea>
+                    <div class="cc-duration-picker">
+                        <label class="cc-label">Duración</label>
+                        <div class="cc-duration-options" id="firstChallengeDuration">
+                            <button type="button" class="cc-duration-btn" data-hours="24">1 día</button>
+                            <button type="button" class="cc-duration-btn active" data-hours="72">3 días</button>
+                            <button type="button" class="cc-duration-btn" data-hours="168">1 semana</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <button id="createBoardBtn" class="cb-submit">Crear tablero</button>
             <button id="cancelCreateBoard" class="cb-cancel">Cancelar</button>
         </div>
@@ -336,6 +373,38 @@
         <div class="modal-sheet-danger">
             <button id="deleteBoardBtn" class="danger-btn">
                 <i class="ph-trash"></i> Eliminar tablero
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- EDIT CHALLENGE MODAL -->
+<div id="editChallengeModal" class="modal-overlay" style="display:none">
+    <div class="modal-sheet">
+        <div class="modal-sheet-header">
+            <h2>Editar reto</h2>
+            <button class="modal-sheet-close" id="closeEditChallengeModal">&times;</button>
+        </div>
+        <div class="modal-sheet-body">
+            <input type="hidden" id="editChallengeId">
+            <div class="profile-field">
+                <label class="profile-label">Título del reto</label>
+                <input type="text" id="editChallengeTitle" class="profile-input" placeholder="Título" maxlength="100">
+            </div>
+            <div class="profile-field">
+                <label class="profile-label">Descripción</label>
+                <textarea id="editChallengeDesc" class="profile-input" placeholder="Descripción (opcional)" maxlength="280" style="min-height:80px;resize:none;"></textarea>
+            </div>
+            <div class="profile-field">
+                <label class="profile-label">Duración</label>
+                <div class="cc-duration-options" id="editChallengeDuration">
+                    <button type="button" class="cc-duration-btn" data-hours="24">1 día</button>
+                    <button type="button" class="cc-duration-btn" data-hours="72">3 días</button>
+                    <button type="button" class="cc-duration-btn" data-hours="168">1 semana</button>
+                </div>
+            </div>
+            <button id="saveEditChallengeBtn" class="profile-save-btn">
+                <i class="ph-check"></i> Guardar cambios
             </button>
         </div>
     </div>
