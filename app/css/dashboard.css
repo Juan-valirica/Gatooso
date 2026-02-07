@@ -11,6 +11,20 @@ body {
     overflow-x: hidden;
 }
 
+/* ===============================
+   GATOOSO BRANDING FONT
+   RL Folklor - Adobe Fonts
+   =============================== */
+:root {
+    --font-brand: "rl-folklor", -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.brand-text {
+    font-family: var(--font-brand);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
 
 /* ===============================
    FLOATING HEADER
@@ -81,11 +95,12 @@ body {
     display: inline-block;
     background: linear-gradient(135deg, rgba(34,23,35,0.10), rgba(34,23,35,0.05));
     color: #221723;
+    font-family: var(--font-brand);
     font-size: 11px;
-    font-weight: 700;
+    font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    padding: 4px 10px;
+    letter-spacing: 0.8px;
+    padding: 5px 12px;
     border-radius: 999px;
     margin-bottom: 6px;
 }
@@ -356,9 +371,12 @@ body {
     transition: color 0.15s ease;
 }
 .nav-btn .nav-label {
-    font-size: 10px;
-    font-weight: 600;
+    font-family: var(--font-brand);
+    font-size: 9px;
+    font-weight: 500;
     color: #6E6E73;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
     transition: color 0.15s ease;
 }
 .nav-btn.active i,
@@ -617,9 +635,12 @@ body {
 }
 
 .welcome-name {
-    font-size: 26px;
-    font-weight: 800;
+    font-family: var(--font-brand);
+    font-size: 28px;
+    font-weight: 700;
     color: #221723;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
     line-height: 1.1;
     margin: 0;
 }
@@ -801,9 +822,12 @@ body {
     z-index: 2;
 }
 .challenges-top-bar h1 {
-    font-size: 22px;
-    font-weight: 800;
+    font-family: var(--font-brand);
+    font-size: 24px;
+    font-weight: 700;
     color: #221723;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 .challenges-close-btn {
     width: 36px;
@@ -824,11 +848,12 @@ body {
     display: flex;
     align-items: center;
     gap: 8px;
+    font-family: var(--font-brand);
     font-size: 13px;
-    font-weight: 700;
+    font-weight: 600;
     color: #6E6E73;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.8px;
     margin-bottom: 12px;
 }
 .section-label i { font-size: 16px; }
@@ -1787,9 +1812,12 @@ body {
 }
 
 .friends-header h1 {
-    font-size: 26px;
-    font-weight: 800;
+    font-family: var(--font-brand);
+    font-size: 28px;
+    font-weight: 700;
     color: #221723;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
     margin: 0;
 }
 
@@ -2060,9 +2088,12 @@ body {
 }
 
 .profile-header h1 {
-    font-size: 26px;
-    font-weight: 800;
+    font-family: var(--font-brand);
+    font-size: 28px;
+    font-weight: 700;
     color: #221723;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
     margin: 0;
 }
 
@@ -2228,10 +2259,12 @@ body {
 }
 
 .profile-stat-label {
-    font-size: 12px;
+    font-family: var(--font-brand);
+    font-size: 11px;
     color: #8E8E93;
-    font-weight: 600;
+    font-weight: 500;
     text-transform: uppercase;
+    letter-spacing: 0.5px;
     letter-spacing: 0.3px;
 }
 
@@ -2244,10 +2277,13 @@ body {
 }
 
 .profile-form-title {
-    font-size: 18px;
-    font-weight: 700;
+    font-family: var(--font-brand);
+    font-size: 16px;
+    font-weight: 600;
     color: #221723;
-    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 8px;
     padding-left: 4px;
 }
 
@@ -2427,9 +2463,12 @@ body {
 }
 
 .modal-sheet-header h2 {
-    font-size: 18px;
-    font-weight: 700;
+    font-family: var(--font-brand);
+    font-size: 16px;
+    font-weight: 600;
     color: #221723;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
     margin: 0;
 }
 

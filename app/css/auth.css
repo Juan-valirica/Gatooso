@@ -19,9 +19,12 @@
 }
 
 .auth-container h1 {
+    font-family: "rl-folklor", -apple-system, BlinkMacSystemFont, sans-serif;
     font-size: 22px;
     font-weight: 600;
-    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 8px;
 }
 
 .auth-container p {
