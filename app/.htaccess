@@ -1,5 +1,11 @@
 RewriteEngine On
 
+# Allow larger file uploads (up to 50MB)
+php_value upload_max_filesize 50M
+php_value post_max_size 55M
+php_value max_execution_time 300
+php_value max_input_time 300
+
 # If the request is not a directory and not an existing file,
 # but a .php file exists with that name, serve it
 RewriteCond %{REQUEST_FILENAME} !-d

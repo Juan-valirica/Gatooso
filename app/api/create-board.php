@@ -20,7 +20,7 @@ if (!$title) {
 }
 
 if (!$rating_icon) {
-    $rating_icon = '⭐';
+    $rating_icon = '🐼';
 }
 
 try {
@@ -37,7 +37,7 @@ try {
 
     // Create default challenge
     $stmt = $pdo->prepare("INSERT INTO challenges (board_id, title, description, created_by) VALUES (?, ?, ?, ?)");
-    $stmt->execute([$board_id, 'La foto más sexy sin querer', 'Esa que no estaba planeada, pero que es el estandarte de tu perfil', $user_id]);
+    $stmt->execute([$board_id, '🐼 Reto GatOOso', 'Sube tu foto más curiosa, rara o random que ya tengas en tu galería. Empieza el juego 😏📸', $user_id]);
 
     $pdo->commit();
 
@@ -51,7 +51,7 @@ try {
     if (strpos($e->getMessage(), 'rating_icon') !== false) {
         // Auto-migrate: add the column
         try {
-            $pdo->exec("ALTER TABLE boards ADD COLUMN rating_icon VARCHAR(10) DEFAULT '⭐' AFTER description");
+            $pdo->exec("ALTER TABLE boards ADD COLUMN rating_icon VARCHAR(10) DEFAULT '🐼' AFTER description");
             // Retry the insert
             $pdo->beginTransaction();
             $stmt = $pdo->prepare("INSERT INTO boards (title, description, rating_icon, created_by) VALUES (?, ?, ?, ?)");
@@ -60,7 +60,7 @@ try {
             $stmt = $pdo->prepare("INSERT INTO board_users (board_id, user_id, role) VALUES (?, ?, 'owner')");
             $stmt->execute([$board_id, $user_id]);
             $stmt = $pdo->prepare("INSERT INTO challenges (board_id, title, description, created_by) VALUES (?, ?, ?, ?)");
-            $stmt->execute([$board_id, 'La foto más sexy sin querer', 'Esa que no estaba planeada, pero que es el estandarte de tu perfil', $user_id]);
+            $stmt->execute([$board_id, '🐼 Reto GatOOso', 'Sube tu foto más curiosa, rara o random que ya tengas en tu galería. Empieza el juego 😏📸', $user_id]);
             $pdo->commit();
             echo json_encode(['success' => true, 'board_id' => (int) $board_id]);
         } catch (PDOException $e2) {

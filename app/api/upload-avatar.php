@@ -2,6 +2,9 @@
 session_start();
 header('Content-Type: application/json');
 
+// Allow larger uploads - set memory limit for image processing
+ini_set('memory_limit', '256M');
+
 if (!isset($_SESSION['user_id'])) {
     echo json_encode(['success' => false, 'message' => 'No autenticado']);
     exit;
@@ -12,27 +15,38 @@ require 'db.php';
 $user_id = $_SESSION['user_id'];
 
 // Validate file
-if (!isset($_FILES['avatar']) || $_FILES['avatar']['error'] !== UPLOAD_ERR_OK) {
+if (!isset($_FILES['avatar'])) {
     echo json_encode(['success' => false, 'message' => 'No se recibió la imagen']);
     exit;
 }
 
+// Handle upload errors with specific messages
 $file = $_FILES['avatar'];
+if ($file['error'] !== UPLOAD_ERR_OK) {
+    $errorMessages = [
+        UPLOAD_ERR_INI_SIZE => 'La imagen es demasiado grande. Máximo permitido por el servidor.',
+        UPLOAD_ERR_FORM_SIZE => 'La imagen es demasiado grande.',
+        UPLOAD_ERR_PARTIAL => 'La imagen se subió parcialmente. Intenta de nuevo.',
+        UPLOAD_ERR_NO_FILE => 'No se seleccionó ninguna imagen.',
+        UPLOAD_ERR_NO_TMP_DIR => 'Error del servidor al procesar la imagen.',
+        UPLOAD_ERR_CANT_WRITE => 'Error del servidor al guardar la imagen.',
+        UPLOAD_ERR_EXTENSION => 'Tipo de archivo no permitido.'
+    ];
+    $msg = $errorMessages[$file['error']] ?? 'Error al subir la imagen.';
+    echo json_encode(['success' => false, 'message' => $msg]);
+    exit;
+}
 
 // Validate mime type
-$allowed = ['image/jpeg', 'image/png', 'image/webp'];
+$allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/heic', 'image/heif'];
 $finfo = finfo_open(FILEINFO_MIME_TYPE);
 $mime = finfo_file($finfo, $file['tmp_name']);
 finfo_close($finfo);
 
-if (!in_array($mime, $allowed)) {
-    echo json_encode(['success' => false, 'message' => 'Solo se permiten imágenes JPG, PNG o WebP']);
-    exit;
-}
-
-// Max 5MB
-if ($file['size'] > 5 * 1024 * 1024) {
-    echo json_encode(['success' => false, 'message' => 'La imagen no puede pesar más de 5MB']);
+// For HEIC/HEIF, mime detection might not work well, check extension
+$ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+if (!in_array($mime, $allowed) && !in_array($ext, ['heic', 'heif'])) {
+    echo json_encode(['success' => false, 'message' => 'Solo se permiten imágenes JPG, PNG, WebP, GIF o HEIC']);
     exit;
 }
 
@@ -42,22 +56,32 @@ if (!is_dir($upload_dir)) {
     mkdir($upload_dir, 0755, true);
 }
 
-// Process image
+// Process image - handle different formats
 $source = null;
+$tempFile = $file['tmp_name'];
+
+// Try to create image from various formats
 switch ($mime) {
     case 'image/jpeg':
-        $source = imagecreatefromjpeg($file['tmp_name']);
+        $source = @imagecreatefromjpeg($tempFile);
         break;
     case 'image/png':
-        $source = imagecreatefrompng($file['tmp_name']);
+        $source = @imagecreatefrompng($tempFile);
         break;
     case 'image/webp':
-        $source = imagecreatefromwebp($file['tmp_name']);
+        $source = @imagecreatefromwebp($tempFile);
+        break;
+    case 'image/gif':
+        $source = @imagecreatefromgif($tempFile);
+        break;
+    default:
+        // Try GD's generic loader as fallback
+        $source = @imagecreatefromstring(file_get_contents($tempFile));
         break;
 }
 
 if (!$source) {
-    echo json_encode(['success' => false, 'message' => 'No se pudo procesar la imagen']);
+    echo json_encode(['success' => false, 'message' => 'No se pudo procesar la imagen. Intenta con otro formato.']);
     exit;
 }
 
